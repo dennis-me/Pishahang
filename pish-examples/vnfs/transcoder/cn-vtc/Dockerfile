@@ -413,8 +413,8 @@ FROM        runtime-base AS release
 # Author Amay Churi
 
 
-CMD         ["--help"]
-ENTRYPOINT  ["ffmpeg"]
+# CMD         ["--help"]
+# ENTRYPOINT  ["ffmpeg"]
 ENV         LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/lib"
 
 COPY --from=build /usr/local/bin /usr/local/bin/
@@ -423,3 +423,19 @@ COPY --from=build /usr/local/lib /usr/local/lib/
 
 # Let's make sure the app built correctly
 # Convenient to verify on https://hub.docker.com/r/jrottenberg/ffmpeg/builds/ console output
+
+# Flask
+RUN apt-get update
+RUN apt-get install -y python-pip python-dev build-essential
+
+COPY ./app /app
+WORKDIR /app
+RUN ln -s /tmp/ static
+
+RUN pip install -r requirements.txt
+
+ENV FLASK_APP=main.py
+ENV FLASK_DEBUG=1
+
+CMD ["flask", "run", "--host=0.0.0.0", "--port=80"]
+# CMD ["bash"]
