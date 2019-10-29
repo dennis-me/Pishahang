@@ -437,5 +437,8 @@ RUN pip install -r requirements.txt
 ENV FLASK_APP=main.py
 ENV FLASK_DEBUG=1
 
-CMD ["flask", "run", "--host=0.0.0.0", "--port=80"]
+RUN chmod +x /app/entrypoint.sh
+ENTRYPOINT ["/app/entrypoint.sh"]
+
+# CMD ["flask", "run", "--host=0.0.0.0", "--port=80"]
 # CMD ["bash"]

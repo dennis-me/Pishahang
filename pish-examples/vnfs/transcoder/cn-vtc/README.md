@@ -70,3 +70,7 @@ Open `ffplay -i udp://131.234.250.178:2205` in terminal to view live stream.
 docker run -it --entrypoint='bash' fellonoverhere45/pishahang-cnf:nvidia-ffmpeg-4 
 ```
 
+### dockerhub
+
+docker tag transcoder-cn:latest pgscramble/transcoder-cn:latest
+docker push pgscramble/transcoder-cn:latest
