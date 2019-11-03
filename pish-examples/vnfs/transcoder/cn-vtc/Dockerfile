@@ -424,21 +424,29 @@ COPY --from=build /usr/local/lib /usr/local/lib/
 # Let's make sure the app built correctly
 # Convenient to verify on https://hub.docker.com/r/jrottenberg/ffmpeg/builds/ console output
 
-# Flask
+# Apache
 RUN apt-get update
-RUN apt-get install -y python-pip python-dev build-essential
+RUN apt-get install -y apache2
 
-COPY ./app /app
-WORKDIR /app
-RUN ln -s /tmp/ static
+COPY ./apache2.conf /etc/apache2/apache2.conf
+COPY ./mime.conf /etc/apache2/mods-available/mime.conf
 
-RUN pip install -r requirements.txt
+RUN ln -s  /tmp /var/www/html/data
 
-ENV FLASK_APP=main.py
-ENV FLASK_DEBUG=1
+# RUN /etc/init.d/apache2 start
 
-RUN chmod +x /app/entrypoint.sh
-ENTRYPOINT ["/app/entrypoint.sh"]
+# WORKDIR /app
+
+# RUN pip install -r requirements.txt
+
+# ENV FLASK_APP=main.py
+# ENV FLASK_DEBUG=1
+
+COPY ./app/entrypoint.sh /entrypoint.sh
+COPY ./app/FreeSerif.ttf /FreeSerif.ttf
+
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
 
 # CMD ["flask", "run", "--host=0.0.0.0", "--port=80"]
 # CMD ["bash"]

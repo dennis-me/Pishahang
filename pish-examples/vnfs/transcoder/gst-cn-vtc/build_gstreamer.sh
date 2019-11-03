@@ -78,3 +78,7 @@ sudo apt install python3-gi  gir1.2-gst-rtsp-server-1.0 -y
 
 
 # ./examples/test-launch --gst-debug=3 '(videotestsrc ! clockoverlay halignment=right valignment=bottom time-format="%d/%m/%Y %H:%M:%S" ! video/x-raw,width=1280,height=720 ! nvh264enc ! h264parse ! rtph264pay name=pay0 pt=96 )'
+
+# export LC_ALL="en_US.UTF-8"
+# export LC_CTYPE="en_US.UTF-8"
+# sudo dpkg-reconfigure locales

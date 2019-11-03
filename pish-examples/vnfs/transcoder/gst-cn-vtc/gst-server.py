@@ -53,6 +53,15 @@ class VOD_Server(object):
         factory2.set_eos_shutdown(True)
         self.server.get_mount_points().add_factory("/{}".format("1080"), factory2)
 
+        factory3 = GstRtspServer.RTSPMediaFactory()
+
+        # factory2.set_launch("( uridecodebin uri={location} name=d d. ! queue ! videoconvert ! videoscale ! video/x-raw,width=1920, height=1080  ! queue ! nvh264enc ! queue !  h264parse ! video/x-h264,stream-format=byte-stream ! rtph264pay name=pay0 pt=96 d. ! queue ! audioconvert ! avenc_aac ! rtpmp4apay pt=97 name=pay1 )".format(location=uri))
+
+        factory3.set_launch('( videotestsrc  is-live=1 ! clockoverlay halignment=center valignment=center time-format="%d/%m/%Y %H:%M:%S" font-desc="60px" ! video/x-raw,width=3840,height=2160 ! queue ! nvh264enc preset=5 bitrate=12000 rc-mode=3 ! queue ! h264parse ! queue ! rtph264pay name=pay0 pt=96 )')
+
+        # factory2.set_shared(True)
+        factory3.set_eos_shutdown(True)
+        self.server.get_mount_points().add_factory("/{}".format("4k"), factory3)
         print(self.server.get_mount_points())
 
     def DelLaunch(self):
