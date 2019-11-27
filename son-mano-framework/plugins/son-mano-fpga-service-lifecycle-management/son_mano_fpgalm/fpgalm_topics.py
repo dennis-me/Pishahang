@@ -30,12 +30,12 @@ from urllib.parse import urlparse
 # List of topics that are used by the FLM for its rabbitMQ communication
 
 # With the FPGA-LM
-CS_DEPLOY = "mano.fpga_service.deploy"
-CS_START = "mano.fpga_service.start"
-CS_CONFIG = "mano.fpga_service.configure"
-CS_STOP = "mano.fpga_service.stop"
-CS_SCALE = "mano.fpga_service.scale"
-CS_KILL = "mano.fpga_service.terminate"
+FPGA_DEPLOY = "mano.fpga_service.deploy"
+FPGA_START = "mano.fpga_service.start"
+FPGA_CONFIG = "mano.fpga_service.configure"
+FPGA_STOP = "mano.fpga_service.stop"
+FPGA_SCALE = "mano.fpga_service.scale"
+FPGA_KILL = "mano.fpga_service.terminate"
 
 # With infrastructure adaptor
 IA_DEPLOY = 'infrastructure.fpga_service.deploy'

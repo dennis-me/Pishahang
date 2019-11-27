@@ -46,7 +46,7 @@ def fpga_serviceid_from_corrid(ledger, corr_id):
             if ledger[fpga_service_id]['act_corr_id'] == str(corr_id):
                 break
 
-    return cservice_id
+    return fpga_service_id
 
 def build_fpgar(ia_fpgar, fpgad):
     """
@@ -93,7 +93,7 @@ def build_fpgar(ia_fpgar, fpgad):
         if fpgad_vdu is not None and 'monitoring_parameters' in fpgad_vdu:
             vdu['monitoring_parameters'] = fpgad_vdu['monitoring_parameters']
 
-        csr['virtual_deployment_units'].append(vdu)
+        fpgar['virtual_deployment_units'].append(vdu)
 
     return fpgar
 
