@@ -50,7 +50,7 @@ LOG.setLevel(logging.INFO)
 
 class FPGAServiceLifecycleManager(ManoBasePlugin):
     """
-    This class implements the cloud service lifecycle manager.
+    This class implements the fpga service lifecycle manager.
     """
 
     def __init__(self,
@@ -86,7 +86,7 @@ class FPGAServiceLifecycleManager(ManoBasePlugin):
 
     def __del__(self):
         """
-        Destroy CLM instance. De-register. Disconnect.
+        Destroy FPGALM instance. De-register. Disconnect.
         :return:
         """
         super(self.__class__, self).__del__()
@@ -140,10 +140,10 @@ class FPGAServiceLifecycleManager(ManoBasePlugin):
     def get_ledger(self, fpga_service_id):
         return self.fpga_services[fpga_service_id]
 
-    def get_cloud_services(self):
+    def get_fpga_services(self):
         return self.fpga_services
 
-    def set_cloud_services(self, fpga_service_dict):
+    def set_fpga_services(self, fpga_service_dict):
         self.fpga_services = fpga_service_dict
 
         return
@@ -153,7 +153,7 @@ class FPGAServiceLifecycleManager(ManoBasePlugin):
         This method makes sure that the next task in the schedule is started
         when a task is finished, or when the first task should begin.
 
-        :param cservice_id: the inst uuid of the cloud service that is being handled.
+        :param fpga_service_id: the inst uuid of the fpga service that is being handled.
         :param first: indicates whether this is the first task in a chain.
         """
 
@@ -198,7 +198,7 @@ class FPGAServiceLifecycleManager(ManoBasePlugin):
         if error is None:
             error = self.fpga_services[fpga_service_id]['error']
         LOG.info("FPGA Service " + fpga_service_id + ": error occured: " + error)
-        LOG.info("FPGA Service " + fpga_service_id + ": informing SLM")
+        LOG.info("FPGA Service " + fpga_service_id + ": informing FPGALM")
 
         message = {}
         message['status'] = "failed"
@@ -217,7 +217,7 @@ class FPGAServiceLifecycleManager(ManoBasePlugin):
 
     def fpga_service_instance_create(self, ch, method, properties, payload):
         """
-        This fpga service handles a received message on the *.cloud_service.create
+        This fpga service handles a received message on the *.fpga_service.create
         topic.
         """
 
@@ -257,20 +257,20 @@ class FPGAServiceLifecycleManager(ManoBasePlugin):
         This methods requests the deployment of a fpga service
         """
 
-        cloud_service = self.cloud_services[fpga_service_id]
+        fpga_service = self.fpga_services[fpga_service_id]
 
         outg_message = {}
-        outg_message['fpgad'] = cloud_service['fpgad']
-        outg_message['fpgad']['instance_uuid'] = cloud_service['id']
-        outg_message['vim_uuid'] = cloud_service['vim_uuid']
-        outg_message['service_instance_id'] = cloud_service['serv_id']
+        outg_message['fpgad'] = fpga_service['fpgad']
+        outg_message['fpgad']['instance_uuid'] = fpga_service['id']
+        outg_message['vim_uuid'] = fpga_service['vim_uuid']
+        outg_message['service_instance_id'] = fpga_service['serv_id']
 
         payload = yaml.dump(outg_message)
 
         corr_id = str(uuid.uuid4())
-        self.cloud_services[fpga_service_id]['act_corr_id'] = corr_id
+        self.fpga_services[fpga_service_id]['act_corr_id'] = corr_id
 
-        LOG.info("IA contacted for cloud service deployment.")
+        LOG.info("IA contacted for fpga service deployment.")
         LOG.debug("Payload of request: " + payload)
         # Contact the IA
         self.manoconn.call_async(self.ia_deploy_response,
@@ -279,66 +279,66 @@ class FPGAServiceLifecycleManager(ManoBasePlugin):
                                  correlation_id=corr_id)
 
         # Pause the chain of tasks to wait for response
-        self.cloud_services[fpga_service_id]['pause_chain'] = True
+        self.fpga_services[fpga_service_id]['pause_chain'] = True
 
     def ia_deploy_response(self, ch, method, prop, payload):
         """
         This method handles the response from the IA on the
-        cs deploy request.
+        fpga service deploy request.
         """
 
-        LOG.info("Response from IA on cs deploy call received.")
+        LOG.info("Response from IA on fpga service deploy call received.")
         LOG.debug("Payload of request: " + str(payload))
 
         inc_message = yaml.load(payload)
 
-        fpga_service_id = tools.fpga_serviceid_from_corrid(self.cloud_services, prop.correlation_id)
+        fpga_service_id = tools.fpga_serviceid_from_corrid(self.fpga_services, prop.correlation_id)
 
-        self.cloud_services[fpga_service_id]['status'] = inc_message['request_status']
+        self.fpga_services[fpga_service_id]['status'] = inc_message['request_status']
 
         if inc_message['request_status'] == "COMPLETED":
             LOG.info("Cs deployed correctly")
-            self.cloud_services[fpga_service_id]["ia_csr"] = inc_message["csr"]
-            self.cloud_services[fpga_service_id]["error"] = None
+            self.fpga_services[fpga_service_id]["ia_fpgar"] = inc_message["fpgar"]
+            self.fpga_services[fpga_service_id]["error"] = None
 
         else:
             LOG.info("Deployment failed: " + inc_message["message"])
-            self.cloud_services[fpga_service_id]["error"] = inc_message["message"]
-            topic = self.cloud_services[fpga_service_id]['topic']
-            self.clm_error(fpga_service_id, topic)
+            self.fpga_services[fpga_service_id]["error"] = inc_message["message"]
+            topic = self.fpga_services[fpga_service_id]['topic']
+            self.fpgalm_error(fpga_service_id, topic)
             return
 
         self.start_next_task(fpga_service_id)
 
-    def store_fpgar(self, cservice_id):
+    def store_fpgar(self, fpga_service_id):
         """
-        This method stores the csr in the repository
+        This method stores the fpgar in the repository
         """
 
-        cloud_service = self.cloud_services[cservice_id]
+        fpga_service = self.fpga_services[fpga_service_id]
 
         # Build the record
-        csr = tools.build_fpgar(cloud_service['ia_csr'], cloud_service['csd'])
-        self.cloud_services[cservice_id]['csr'] = csr
-        LOG.info(yaml.dump(csr))
+        fpgar = tools.build_fpgar(fpga_service['ia_fpgar'], fpga_service['fpgad'])
+        self.fpga_services[fpga_service_id]['fpgar'] = fpgar
+        LOG.info(yaml.dump(fpgar))
 
         # Store the record
-        url = t.FPGAR_REPOSITORY_URL + 'cs-instances'
+        url = t.FPGAR_REPOSITORY_URL + 'fpga-instances'
         header = {'Content-Type': 'application/json'}
-        csr_response = requests.post(url,
-                                      data=json.dumps(csr),
+        fpgar_response = requests.post(url,
+                                      data=json.dumps(fpgar),
                                       headers=header,
                                       timeout=1.0)
         LOG.info("Storing FPGAR on " + url)
-        LOG.debug("FPGAR: " + str(csr))
+        LOG.debug("FPGAR: " + str(fpgar))
 
-        if csr_response.status_code == 200:
+        if fpgar_response.status_code == 200:
             LOG.info("FPGAR storage accepted.")
         # If storage fails, add error code and message to reply to gk
         else:
-            error = {'http_code': csr_response.status_code,
-                     'message': csr_response.json()}
-            self.cloud_services[cservice_id]['error'] = error
+            error = {'http_code': fpgar_response.status_code,
+                     'message': fpgar_response.json()}
+            self.fpga_services[fpga_service_id]['error'] = error
             LOG.info('FPGAR to repo failed: ' + str(error))
 
         return
@@ -350,14 +350,14 @@ class FPGAServiceLifecycleManager(ManoBasePlugin):
         """
         LOG.info("Informing the SLM of the status of the fpga-service deployment")
 
-        cloud_service = self.cloud_services[fpga_service_id]
+        fpga_service = self.fpga_services[fpga_service_id]
 
         message = {}
-        message["fpgar"] = cloud_service["fpgar"]
-        message["status"] = cloud_service["status"]
-        message["error"] = cloud_service["error"]
+        message["fpgar"] = fpga_service["fpgar"]
+        message["status"] = fpga_service["status"]
+        message["error"] = fpga_service["error"]
 
-        corr_id = self.cloud_services[fpga_service_id]['orig_corr_id']
+        corr_id = self.fpga_services[fpga_service_id]['orig_corr_id']
         self.manoconn.notify(t.FPGA_DEPLOY,
                              yaml.dump(message),
                              correlation_id=corr_id)
@@ -367,17 +367,17 @@ class FPGAServiceLifecycleManager(ManoBasePlugin):
 # CLM tasks
 ###########
 
-    def add_cloud_service_to_ledger(self, payload, corr_id, fpga_service_id, topic):
+    def add_fpga_service_to_ledger(self, payload, corr_id, fpga_service_id, topic):
         """
-        This method adds new cloud services with their specifics to the ledger,
-        so other cloud services can use this information.
+        This method adds new fpga services with their specifics to the ledger,
+        so other fpga services can use this information.
 
         :param payload: the payload of the received message
         :param corr_id: the correlation id of the received message
-        :param cservice_id: the instance uuid of the cloud service defined by SLM.
+        :param fpga_service_id: the instance uuid of the fpga service defined by SLM.
         """
 
-        # Add the cloud service to the ledger and add instance ids
+        # Add the fpga service to the ledger and add instance ids
         self.fpga_services[fpga_service_id] = {}
         self.fpga_services[fpga_service_id]['fpgad'] = payload['fpgad']
         self.fpga_services[fpga_service_id]['id'] = fpga_service_id
@@ -391,13 +391,13 @@ class FPGAServiceLifecycleManager(ManoBasePlugin):
         # Add payload to the ledger
         self.fpga_services[fpga_service_id]['payload'] = payload
 
-        # Add the service uuid that this cloud service belongs to
+        # Add the service uuid that this fpga service belongs to
         self.fpga_services[fpga_service_id]['serv_id'] = payload['serv_id']
 
         # Add the VIM uuid
         self.fpga_services[fpga_service_id]['vim_uuid'] = payload['vim_uuid']
 
-        # Create the cloud service schedule
+        # Create the fpga service schedule
         self.fpga_services[fpga_service_id]['schedule'] = []
 
         # Create the chain pause and kill flag
@@ -419,10 +419,10 @@ class FPGAServiceLifecycleManager(ManoBasePlugin):
 
         :param payload: the payload of the received message
         :param corr_id: the correlation id of the received message
-        :param cserver_id: the instance uuid of the fpga service defined by SLM.
+        :param fpga_server_id: the instance uuid of the fpga service defined by SLM.
         """
 
-        # Add the cloud service to the ledger and add instance ids
+        # Add the fpga service to the ledger and add instance ids
         self.fpga_services[fpga_server_id] = {}
 
         fpgar = {}
@@ -445,13 +445,13 @@ class FPGAServiceLifecycleManager(ManoBasePlugin):
         # Add payload to the ledger
         self.fpga_services[fpga_server_id]['payload'] = payload
 
-        # Add the service uuid that this cloud service belongs to
+        # Add the service uuid that this fpga service belongs to
         self.fpga_services[fpga_server_id]['serv_id'] = payload['serv_id']
 
         # Add the VIM uuid
         self.fpga_services[fpga_server_id]['vim_uuid'] = ''
 
-        # Create the cloud service schedule
+        # Create the fpga service schedule
         self.fpga_services[fpga_server_id]['schedule'] = []
 
         # Create the chain pause and kill flag
