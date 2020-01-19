@@ -62,6 +62,8 @@ function_specific_managers:
 virtual_deployment_units:
   - id: "vdu01"
     description: "VNFC for the dashboard and the time-series database"
+    service_image: "Some image"
+    service_type: "Load Balancer"
     vm_image: "TBD"
     vm_image_format: "qcow2"
     resource_requirements:

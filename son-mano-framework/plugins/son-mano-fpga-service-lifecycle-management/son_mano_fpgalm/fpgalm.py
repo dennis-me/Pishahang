@@ -291,7 +291,7 @@ class FPGAServiceLifecycleManager(ManoBasePlugin):
         LOG.debug("Payload of request: " + str(payload))
 
         inc_message = yaml.load(payload)
-
+        
         fpga_service_id = tools.fpga_serviceid_from_corrid(self.fpga_services, prop.correlation_id)
 
         self.fpga_services[fpga_service_id]['status'] = inc_message['request_status']

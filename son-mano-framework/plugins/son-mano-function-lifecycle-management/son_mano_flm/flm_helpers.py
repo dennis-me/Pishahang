@@ -123,12 +123,12 @@ def build_vnfr(ia_vnfr, vnfd):
 
     vnfr = {}
     # vnfd base fields
-    vnfr['descriptor_version'] = ia_vnfr['descriptor_version']
-    vnfr['id'] = ia_vnfr['id']
+    vnfr['descriptor_version'] = "0.1"#ia_vnfr['descriptor_version']
+    vnfr['id'] = "4123"#ia_vnfr['id']
     # Building the vnfr makes it the first version of this vnfr.
     vnfr['version'] = '1'
-    vnfr['status'] = ia_vnfr['status']
-    vnfr['descriptor_reference'] = ia_vnfr['descriptor_reference']
+    vnfr['status'] = "status"#ia_vnfr['status']
+    vnfr['descriptor_reference'] = "asd"#ia_vnfr['descriptor_reference']
 
     # deployment flavour
     if 'deployment_flavour' in ia_vnfr:
@@ -136,7 +136,8 @@ def build_vnfr(ia_vnfr, vnfd):
 
     # virtual_deployment_units
     vnfr['virtual_deployment_units'] = []
-    for ia_vdu in ia_vnfr['virtual_deployment_units']:
+    print (ia_vnfr)
+    for ia_vdu in ia_vnfr[0]['virtual_deployment_units']:
         vnfd_vdu = get_vnfd_vdu_by_reference(vnfd, ia_vdu['vdu_reference'])
 
         vdu = {}

@@ -156,7 +156,6 @@ properties:
     type: "string"
     pattern: "^[A-Za-z0-9\\-_.:]+$"
   parent_ns:
-    # TODO: ETSI forsees a list of records. Check why?
     description: "Reference to records of network service (nsr:id) that this VNF instance is part of."
     type: "string"
     pattern: "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"

@@ -27,7 +27,7 @@ This is SONATA's cloud service lifecycle management plugin
 import os
 from urllib.parse import urlparse
 
-# List of topics that are used by the FLM for its rabbitMQ communication
+# List of topics that are used by the FPGALM for its rabbitMQ communication
 
 # With the FPGA-LM
 FPGA_DEPLOY = "mano.fpga_service.deploy"
@@ -49,8 +49,8 @@ GK_PORT = p.port
 BASE_URL = p.scheme + "://" + p.hostname + ":" + str(GK_PORT)
 
 # REST API with GK
-GK_SERVICES_URL = BASE_URL + '/api/v2/fpga-services/'
-#GK_CLOUD_SERVICES_URL = BASE_URL + '/api/v2/cloud-services/'
+GK_SERVICES_URL = BASE_URL + '/api/v2/aws-services/'
+GK_FPGA_SERVICES_URL = BASE_URL + '/api/v2/fpga-services/'
 
 # With Repositories
 temp = os.environ.get("url_fpgar_repository")
@@ -60,8 +60,8 @@ c = urlparse(temp)
 CAT_PORT = c.port
 CAT_BASE_URL = c.scheme + "://" + c.hostname + ":" + str(CAT_PORT)
 
+NSR_REPOSITORY_URL = CAT_BASE_URL + "/records/nsr/"
 FPGAR_REPOSITORY_URL = CAT_BASE_URL + "/records/fpgar/"
-#CSR_REPOSITORY_URL = CAT_BASE_URL + "/records/csr/"
 
 # With Monitoring Manager
 # TODO: Secure this get against failure

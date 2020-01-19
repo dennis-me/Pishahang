@@ -30,9 +30,9 @@ import yaml
 
 def fpga_serviceid_from_corrid(ledger, corr_id):
     """
-    This method returns the cloud service uuid based on a correlation id.
+    This method returns the fpga service uuid based on a correlation id.
     It is used for responses from different modules that use the
-    correlation id as reference instead of the cloud service id.
+    correlation id as reference instead of the fpga service id.
 
     :param serv_dict: The ledger of functions
     :param corr_id: The correlation id
@@ -50,20 +50,19 @@ def fpga_serviceid_from_corrid(ledger, corr_id):
 
 def build_fpgar(ia_fpgar, fpgad):
     """
-    This method builds the CSRs. CSRs are built from the stripped CSRs
+    This method builds the FPGARs. FPGARs are built from the stripped FPGARs
     returned by the Infrastructure Adaptor (IA), combining it with the
-    provided CSD.
+    provided FPGAD.
     """
 
     fpgar = {}
-    # csd base fields
+    # fpgad base fields
     fpgar['descriptor_version'] = ia_fpgar['descriptor_version']
     fpgar['id'] = ia_fpgar['id']
-    # Building the csr makes it the first version of this csr.
+    # Building the fpgar makes it the first version of this fpgar.
     fpgar['version'] = '1'
     fpgar['status'] = ia_fpgar['status']
     fpgar['descriptor_reference'] = ia_fpgar['descriptor_reference']
-
     # virtual_deployment_units
     fpgar['virtual_deployment_units'] = []
     for ia_vdu in ia_fpgar['virtual_deployment_units']:
@@ -74,9 +73,9 @@ def build_fpgar(ia_fpgar, fpgad):
         vdu['vim_id'] = ia_vdu['vim_id']
         if 'resource_requirements' in fpgad_vdu:
             vdu['resource_requirements'] = fpgad_vdu['resource_requirements']
+
         vdu['service_image'] = fpgad_vdu['service_image']
         vdu['service_type'] = fpgad_vdu['service_type']
-        vdu['service_ports'] = fpgad_vdu['service_ports']
 
         if 'service_name' in fpgad_vdu:
             vdu['service_name'] = fpgad_vdu['service_name']

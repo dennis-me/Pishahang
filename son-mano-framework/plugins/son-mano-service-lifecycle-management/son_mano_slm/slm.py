@@ -481,6 +481,8 @@ class ServiceLifecycleManager(ManoBasePlugin):
         add_schedule.append('vnf_deploy')
         add_schedule.append('vnfs_start')
         add_schedule.append('cs_deploy')
+        add_schedule.append('aws_deploy')
+
         #add_schedule.append('vnf_chain')
         add_schedule.append('store_nsr')
         add_schedule.append('wan_configure')
@@ -1038,7 +1040,7 @@ class ServiceLifecycleManager(ManoBasePlugin):
                     content['image_md5'] = vdu['vm_image_md5']
 
                 IA_mapping['vim_list'][index]['vm_images'].append(content)
-
+                #TODO add aws service
         for cloud_service in self.services[serv_id]['cloud_service']:
             vim_uuid = cloud_service['vim_uuid']
 
@@ -1101,6 +1103,43 @@ class ServiceLifecycleManager(ManoBasePlugin):
                                      yaml.dump(message),
                                      correlation_id=corr_id)
 
+        self.services[serv_id]['pause_chain'] = True
+
+    def aws_deploy(self, serv_id):
+        """
+        Deploy the fpga services of the aws service.
+        """
+        if len(self.services[serv_id]['fpga_service']) == 0:
+            msg = ": Service doesn't contain any fpga services. Skipping FPGA deploy."
+            LOG.info("Service " + serv_id + msg)
+            return
+
+        msg = ": Deploying aws services."
+        LOG.info("Service " + serv_id + msg)
+
+        fpga_services = self.services[serv_id]['fpga_service']
+        self.services[serv_id]['css_to_resp'] = len(fpga_services)
+
+        self.services[serv_id]['act_corr_id'] = []
+
+        for fpga_service in fpga_services:
+            corr_id = str(uuid.uuid4())
+            self.services[serv_id]['act_corr_id'].append(corr_id)
+
+            message = {}
+            message['fpgad'] = fpga_service['fpgad']
+            message['id'] = fpga_service['id']
+            message['vim_uuid'] = fpga_service['vim_uuid']
+            message['serv_id'] = serv_id
+
+            msg = ": Requesting the deployment of cs " + fpga_service['id']
+            LOG.info("Service " + serv_id + msg)
+            LOG.debug("Payload of request: " + str(message))
+            self.manoconn.call_async(self.resp_cs_depl,
+                                     t.MANO_FPGA_DEPLOY,
+                                     yaml.dump(message),
+                                     correlation_id=corr_id)
+        #TODO response fpga deploy
         self.services[serv_id]['pause_chain'] = True
 
     def cs_deploy(self, serv_id):
@@ -1638,7 +1677,7 @@ class ServiceLifecycleManager(ManoBasePlugin):
                 if error is not None:
                     self.error_handling(serv_id, t.GK_CREATE, error)
                     return
-
+#TODO store fpgar
             LOG.info("Service " + serv_id + ": Update status of the CSR")
             for cloud_service in self.services[serv_id]['cloud_service']:
                 cloud_service['csr']['status'] = "normal operation"
