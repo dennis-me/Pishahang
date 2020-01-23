@@ -1040,7 +1040,8 @@ class ServiceLifecycleManager(ManoBasePlugin):
                     content['image_md5'] = vdu['vm_image_md5']
 
                 IA_mapping['vim_list'][index]['vm_images'].append(content)
-                #TODO add aws service
+
+
         for cloud_service in self.services[serv_id]['cloud_service']:
             vim_uuid = cloud_service['vim_uuid']
 
@@ -1053,7 +1054,20 @@ class ServiceLifecycleManager(ManoBasePlugin):
             if new_vim:
                 IA_mapping['vim_list'].append({'uuid': vim_uuid,
                                                'vm_images': []})
+        
+        for fpga_service in self.services[serv_id]['fpga_service']:
+            vim_uuid = fpga_service['vim_uuid']
 
+            # Add VIM uuid if new
+            new_vim = True
+            for vim in IA_mapping['vim_list']:
+                if vim['uuid'] == vim_uuid:
+                    new_vim = False
+
+            if new_vim:
+                IA_mapping['vim_list'].append({'uuid': vim_uuid,
+                                               'vm_images': []})
+        
         # Add correlation id to the ledger for future reference
         corr_id = str(uuid.uuid4())
         self.services[serv_id]['act_corr_id'] = corr_id
@@ -1132,15 +1146,50 @@ class ServiceLifecycleManager(ManoBasePlugin):
             message['vim_uuid'] = fpga_service['vim_uuid']
             message['serv_id'] = serv_id
 
-            msg = ": Requesting the deployment of cs " + fpga_service['id']
+            msg = ": Requesting the deployment of fpga service " + fpga_service['id']
             LOG.info("Service " + serv_id + msg)
             LOG.debug("Payload of request: " + str(message))
-            self.manoconn.call_async(self.resp_cs_depl,
+            self.manoconn.call_async(self.resp_fpga_depl,
                                      t.MANO_FPGA_DEPLOY,
                                      yaml.dump(message),
                                      correlation_id=corr_id)
-        #TODO response fpga deploy
+
         self.services[serv_id]['pause_chain'] = True
+
+    def resp_fpga_depl(self, ch, method, prop, payload):
+        """
+        This method handles a response from the FLM to a fpga deploy request.
+        """
+        message = yaml.load(payload)
+
+        # Retrieve the service uuid
+        serv_id = tools.servid_from_corrid(self.services, prop.correlation_id)
+        msg = ": Message received from CLM on FPGA service deploy call."
+        LOG.info("Service " + serv_id + msg)
+
+        # Inform GK if FPGA deployment failed
+        if message['error'] is not None:
+
+            LOG.info("Service " + serv_id + ": Deployment of FPGA Service failed")
+            LOG.debug("Message: " + str(message))
+            self.error_handling(serv_id, t.GK_CREATE, message['error'])
+
+        else:
+            LOG.info("Service " + serv_id + ": FPGA Service correctly Deployed.")
+            for fpga_service in self.services[serv_id]['fpga_service']:
+                if fpga_service['id'] == message['fpgar']['id']:
+                    fpga_service['fpgar'] = message['fpgar']
+                    LOG.info("Added fpgar for inst: " + message['fpgar']['id'])
+
+        css_to_depl = self.services[serv_id]['css_to_resp'] - 1
+        self.services[serv_id]['css_to_resp'] = css_to_depl
+
+        # Only continue if all css are deployed
+        if css_to_depl == 0:
+            LOG.info("Deployment of CSs completed.")
+            self.services[serv_id]['act_corr_id'] = None
+            self.start_next_task(serv_id)
+
 
     def cs_deploy(self, serv_id):
         """
@@ -2487,16 +2536,22 @@ class ServiceLifecycleManager(ManoBasePlugin):
 
         # Generate an istance uuid for the service
         serv_id = str(uuid.uuid4())
-
-        descriptor = payload['NSD'] if 'NSD' in payload else payload['COSD']
+        if 'NSD' in payload:
+            descriptor = payload['NSD']
+        elif 'COSD' in payload:
+            descriptor = payload['COSD']
+        else:
+            descriptor = payload['AWSD']
 
         # Add the service to the ledger and add instance ids
         self.services[serv_id] = {}
         self.services[serv_id]['service'] = {}
         if 'NSD' in payload:
             self.services[serv_id]['service']['nsd'] = payload['NSD']
-        else:
+        elif 'COSD' in payload:
             self.services[serv_id]['service']['cosd'] = payload['COSD']
+        else:
+            self.services[serv_id]['service']['awsd'] = payload['AWSD']
         self.services[serv_id]['service']['id'] = serv_id
 
         msg = ": NSD uuid is " + str(descriptor['uuid'])
@@ -2504,6 +2559,7 @@ class ServiceLifecycleManager(ManoBasePlugin):
 
         self.services[serv_id]['function'] = []
         self.services[serv_id]['cloud_service'] = []
+        self.services[serv_id]['fpga_service'] = []
         for key in payload.keys():
             if key[:4] == 'VNFD':
                 vnf_id = str(uuid.uuid4())
@@ -2529,6 +2585,18 @@ class ServiceLifecycleManager(ManoBasePlugin):
                                  'csd': csd,
                                  'id': cs_id}
                 self.services[serv_id]['cloud_service'].append(cs_base_dict)
+            elif key[:5] == 'FPGAD':
+                fpga_service_id = str(uuid.uuid4())
+                msg = "FPGAD instance id generated: " + fpga_service_id
+                LOG.info("Service " + serv_id + msg)
+                fpgad = payload[key]
+                fpga_service_base_dict = {'start': {'trigger': True, 'payload': {}},
+                                 'stop': {'trigger': True, 'payload': {}},
+                                 'configure': {'trigger': True, 'payload': {}},
+                                 'scale': {'trigger': True, 'payload': {}},
+                                 'fpgad': fpgad,
+                                 'id': fpga_service_id}
+                self.services[serv_id]['fpga_service'].append(fpga_service_base_dict)
 
         # Add to correlation id to the ledger
         self.services[serv_id]['original_corr_id'] = corr_id
@@ -2754,7 +2822,7 @@ class ServiceLifecycleManager(ManoBasePlugin):
 
     def validate_deploy_request(self, serv_id):
         """
-        This metod checks the format of a received request. All neccesary
+        This method checks the format of a received request. All neccesary
         fields should be present, and the available fields should not be
         conflicting with each other.
 
@@ -2775,18 +2843,20 @@ class ServiceLifecycleManager(ManoBasePlugin):
             return
 
         # The dictionary should contain a 'NSD' key
-        if 'NSD' not in payload.keys() and 'COSD' not in payload.keys():
-            msg = ": Validation of request completed. Status: No NSD/COSD"
+        if 'NSD' not in payload.keys() and 'COSD' not in payload.keys() and 'AWSD' not in payload.keys():
+            msg = ": Validation of request completed. Status: No NSD/COSD/AWSD"
             LOG.info("Service " + serv_id + msg)
-            response = "Request " + corr_id + ": NSD/COSD is not a dict."
+            response = "Request " + corr_id + ": NSD/COSD/AWSD is not a dict."
             self.services[serv_id]['status'] = 'ERROR'
             self.services[serv_id]['error'] = response
             return
 
         if 'NSD' in payload:
             descriptor = payload['NSD']
-        else:
+        elif 'COSD' in payload:
             descriptor = payload['COSD']
+        else: 
+            descriptor = payload['AWSD']
 
         # There should be as many VNFD keys in the dictionary as their
         # are network functions listed to the NSD.
@@ -2820,7 +2890,23 @@ class ServiceLifecycleManager(ManoBasePlugin):
             self.services[serv_id]['error'] = response
             return
 
-        # Check whether VNFDs or CSDs are empty.
+        # There should be as many FPGAD keys in the dictionary as their
+        # are cloud services listed to the NSD.
+        number_of_fpgads = 0
+        for key in payload.keys():
+            if key[:5] == 'FPGAD':
+                number_of_fpgads = number_of_fpgads + 1
+
+        if (not 'fpga_services' in descriptor and number_of_fpgads > 0) or \
+                ('fpga_services' in descriptor and len(descriptor['fpga_services']) != number_of_fpgads):
+            msg = ": Validation request completed. Number of FPGADs incorrect"
+            LOG.info("Service " + serv_id + msg)
+            response = "Request " + corr_id + ": # of FPGADs doesn't match NSD."
+            self.services[serv_id]['status'] = 'ERROR'
+            self.services[serv_id]['error'] = response
+            return
+
+        # Check whether VNFDs or CSDs or FPGADs are empty.
         for key in payload.keys():
             if key[:4] == 'VNFD':
                 if payload[key] is None:
@@ -2835,6 +2921,14 @@ class ServiceLifecycleManager(ManoBasePlugin):
                     msg = ": Validation request completed. Empty CSD."
                     LOG.info("Service " + serv_id + msg)
                     response = "Request " + corr_id + ": empty CSD."
+                    self.services[serv_id]['status'] = 'ERROR'
+                    self.services[serv_id]['error'] = response
+                    return            
+            if key[:5] == 'FPGAD':
+                if payload[key] is None:
+                    msg = ": Validation request completed. Empty FPGAD."
+                    LOG.info("Service " + serv_id + msg)
+                    response = "Request " + corr_id + ": empty FPGAD."
                     self.services[serv_id]['status'] = 'ERROR'
                     self.services[serv_id]['error'] = response
                     return
@@ -2870,12 +2964,24 @@ class ServiceLifecycleManager(ManoBasePlugin):
                        'functions': functions,
                        'topology': topology,
                        'serv_id': serv_id}
-        else:
+        elif 'cosd' in self.services[serv_id]['service']:
             COSD = self.services[serv_id]['service']['cosd']
             functions = self.services[serv_id]['function']
             cloud_services = self.services[serv_id]['cloud_service']
 
             content = {'cosd': COSD,
+                       'functions': functions,
+                       'cloud_services': cloud_services,
+                       'topology': topology,
+                       'serv_id': serv_id}
+        else: 
+            AWSD = self.services[serv_id]['service']['awsd']
+            fpga_service = self.services[serv_id]['fpga_service']
+            functions = self.services[serv_id]['function']
+            cloud_services = self.services[serv_id]['cloud_service']
+
+            content = {'awsd': AWSD,
+                       'fpga_service' : fpga_service,
                        'functions': functions,
                        'cloud_services': cloud_services,
                        'topology': topology,
@@ -2921,12 +3027,18 @@ class ServiceLifecycleManager(ManoBasePlugin):
             LOG.info("Service " + serv_id + ": Placement completed")
             LOG.debug("Calculated SLM placement: " + str(mapping))
             self.services[serv_id]['service']['mapping'] = mapping
+
+
             for function in self.services[serv_id]['function']:
                 vnf_id = function['id']
                 function['vim_uuid'] = mapping[vnf_id]['vim']
             for cloud_service in self.services[serv_id]['cloud_service']:
                 cs_id = cloud_service['id']
                 cloud_service['vim_uuid'] = mapping[cs_id]['vim']
+            for fpga_service in self.services[serv_id]['fpga_service']:
+                fpga_service_id = fpga_service['id']
+                fpga_service['vim_uuid'] = mapping[fpga_service_id]['vim']
+
 
         # Check if the placement does not contain any loops
         vim_list = tools.get_ordered_vim_list(self.services[serv_id])

@@ -51,10 +51,12 @@ class fakeslm_instantiation(object):
         self.manoconn = messaging.ManoBrokerRequestResponseConnection(self.name)
 
         self.end = False
-
+        self.register()
         self.publish_sid()
 
         self.run()
+    def register(self):
+        self.manoconn.register_async_endpoint(self._reply_infra_prepare,'infrastructure.service.prepare')
 
     def run(self):
 
@@ -63,29 +65,36 @@ class fakeslm_instantiation(object):
         while self.end == False:
             time.sleep(1)
 
+    def _reply_infra_prepare(self,ch, method, properties, payload):
+
+        message = {'request_status': 'COMPLETED'}
+        return yaml.dump(message)
+
     def publish_sid(self):
 
         LOG.info("Sending instantiate request")
-        nsd = open('test/test_descriptors/nsd.yml', 'r')
-        message = {'NSD': yaml.load(nsd), 'uuid': '937213ae-890b-413c-a11e-45c62c4eee3f'}
-        self.manoconn.call_async(self._on_publish_sid_response,
-                                 'mano.fpga_service.deploy',
-                                 yaml.dump(message))
+        nsd = open('/home/dennis/Pishahang/pish-examples/service-descriptors/hello-web aws/yaml/hello_web_awsd.yml', 'r')
+        #message = {'NSD': yaml.load(nsd), 'uuid': '937213ae-890b-413c-a11e-45c62c4eee3f'}
+        #self.manoconn.call_async(self._on_publish_sid_response,
+         #                        'service.instances.create', 
+          #                       yaml.dump(message))
 
-        vnfd1 = open('test/test_descriptors/vnfd1.yml', 'r')
-        message = {'fpgad': yaml.load(vnfd1), 'uuid': 'c32b731f-7eea-4afd-9c60-0b0d0ea37eed'}
-        self.manoconn.call_async(self._on_publish_sid_response,
-                                 'mano.fpga_service.deploy',
-                                 yaml.dump(message))
+        vnfd1 = open('/home/dennis/Pishahang/pish-examples/service-descriptors/hello-web aws/yaml/hello_web_fpgad.yml', 'r')
+       # message = {'vnfd': yaml.load(vnfd1), 'uuid': 'c32b731f-7eea-4afd-9c60-0b0d0ea37eed'}
+        #self.manoconn.call_async(self._on_publish_sid_response,
+         #                        'service.instances.create',
+          #                       yaml.dump(message))
 
-        vnfd2 = open('test/test_descriptors/vnfd2.yml', 'r')
-        message = {'fpgad': yaml.load(vnfd2), 'uuid': '754fe4fe-96c9-484d-9683-1a1e8b9a31a3'}
+        vnfd2 = open('/home/dennis/Pishahang/pish-examples/service-descriptors/ping-forwarder/yaml/vm-vnfd.yml', 'r')
+        message = {'AWSD': yaml.load(nsd),'FPGAD0': yaml.load(vnfd1), 'uuid': '754fe4fe-96c9-484d-9683-1a1e8b9a31a3', 'user_data': {'customer':{'keys':{'public': 'somekey0', 'private' : 'somekey1'}}}}
         self.manoconn.call_async(self._on_publish_sid_response,
-                                 'mano.fpga_service.deploy',
+                                 'service.instances.create',
                                  yaml.dump(message))
+                                 
         nsd.close()
         vnfd1.close()
         vnfd2.close()
+
 
     def _on_publish_sid_response(self, ch, method, props, response):
 

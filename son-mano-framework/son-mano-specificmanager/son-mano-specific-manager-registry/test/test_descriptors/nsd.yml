@@ -10,6 +10,7 @@
 descriptor_version: "1.0"
 
 vendor: "eu.sonata-nfv.service-descriptor"
+uuid: '937213ae-890b-413c-a11e-45c62c4eee3f'
 name: "sonata-demo"
 version: "0.2.1"
 author: "Manuel Peuster, Paderborn University"

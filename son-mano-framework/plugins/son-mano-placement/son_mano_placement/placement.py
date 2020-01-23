@@ -140,11 +140,18 @@ class PlacementPlugin(ManoBasePlugin):
         content = yaml.load(payload)
         LOG.info("Placement request for service: " + content['serv_id'])
         topology = content['topology']
-        descriptor = content['nsd'] if 'nsd' in content else content['cosd']
+        if 'nsd' in content:
+            descriptor = content['nsd']
+        elif 'cosd' in content: 
+            descriptor = content['cosd']
+        else:
+            descriptor = content['awsd']
+
         functions = content['functions'] if 'functions' in content else []
         cloud_services = content['cloud_services'] if 'cloud_services' in content else []
+        fpga_service = content['fpga_service'] if 'fpga_service' in content else []
 
-        placement = self.placement(descriptor, functions, cloud_services, topology)
+        placement = self.placement(descriptor, functions, cloud_services, fpga_service, topology)
 
         response = {'mapping': placement}
         topic = 'mano.service.place'
@@ -156,7 +163,7 @@ class PlacementPlugin(ManoBasePlugin):
         LOG.info("Placement response sent for service: " + content['serv_id'])
         LOG.info(response)
 
-    def placement(self, descriptor, functions, cloud_services, topology):
+    def placement(self, descriptor, functions, cloud_services, fpga_service, topology):
         """
         This is the default placement algorithm that is used if the SLM
         is responsible to perform the placement
@@ -173,7 +180,7 @@ class PlacementPlugin(ManoBasePlugin):
             needed_sto = vdu[0]['resource_requirements']['storage']['size']
 
             for vim in topology:
-                if vim['vim_type'] == 'Kubernetes':
+                if vim['vim_type'] == 'Kubernetes' or vim['vim_type'] == "AWS":
                     continue
                 cpu_req = needed_cpu <= (vim['core_total'] - vim['core_used'])
                 mem_req = needed_mem <= (vim['memory_total'] - vim['memory_used'])
@@ -202,9 +209,24 @@ class PlacementPlugin(ManoBasePlugin):
                     mapping[cloud_service['id']]['vim'] = vim['vim_uuid']
                     vim['memory_used'] = vim['memory_used'] + needed_mem
                     break
+   
+
+        for fpga in fpga_service:
+            fpgad = fpga['fpgad']
+            vdu = fpgad['virtual_deployment_units']
+            needed_mem = 0
+
+            for vim in topology:
+                if vim['vim_type'] != "AWS":
+                    continue
+                #TODO if budget is enough
+                mapping[fpga['id']] = {}
+                mapping[fpga['id']]['vim'] = vim['vim_uuid']
+                break
+
 
         # Check if all VNFs and CSs have been mapped
-        if len(mapping.keys()) == len(functions) + len(cloud_services):
+        if len(mapping.keys()) == len(functions) + len(cloud_services)+ len(fpga_service):
             return mapping
         else:
             LOG.info("Placement was not possible")

@@ -352,8 +352,13 @@ def get_ordered_vim_list(payload, which_graph=0):
         return None
 
     nodes = {}
+    if 'nsd' in payload['service']:
+        descriptor = payload['service']['nsd']
+    elif 'cosd' in payload['service']:
+        descriptor = payload['service']['cosd']
+    else:
+        descriptor = payload['service']['awsd']
 
-    descriptor = payload['service']['nsd'] if 'nsd' in payload['service'] else payload['service']['cosd']
     vim_list = []
 
     if 'forwarding_graphs' not in descriptor:
@@ -361,6 +366,8 @@ def get_ordered_vim_list(payload, which_graph=0):
             vim_list.append(func['vim_uuid'])
         for cloud_service in payload['cloud_service']:
             vim_list.append(cloud_service['vim_uuid'])
+        for fpga_service in payload['fpga_service']:
+            vim_list.append(fpga_service['vim_uuid'])
         return vim_list
 
     forw_graph = descriptor['forwarding_graphs'][which_graph]
