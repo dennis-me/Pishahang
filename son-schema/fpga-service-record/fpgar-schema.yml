@@ -119,15 +119,12 @@ properties:
           minimum: 0
         vim_id:
           description: "Identifier of the VIM this replica is running at."
-        service_image:
+        ami:
           description: "The reference to a amazon machine image for the fpga service."
           type: "string"
         service_name:
           description: "The name for the network service. Useful for DNS, etc."
           type: "string"
-        service_type:
-          description: "The service type. See Kubernetes documentation for further information."
-          $ref: "#/definitions/service_types"
         arn:
           description: "list of ARNs of instances"
           type: "string"

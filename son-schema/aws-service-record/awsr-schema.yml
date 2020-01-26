@@ -113,6 +113,21 @@ properties:
       additionalProperties: false
     minItems: 0
     uniqueItems: true
+  fpga_services: 
+    description: "The FPGA instances (actually their records), that are part of this network service instance."
+    type: "array"
+    items: 
+      type: "object"
+      properties:
+        fpgar_id:
+          description: "A unique identifier of the fpga service record within the scope of this NS instance."
+          type: "string"
+          pattern: "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+      required:
+        - fpgar_id
+      additionalProperties: false
+    minItems: 0
+    uniqueItems: true
   network_services:
     description: "The recursive NSs (their descriptors), that are part of this network service."
     type: "array"

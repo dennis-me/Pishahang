@@ -24,7 +24,8 @@
 ## the Horizon 2020 and 5G-PPP programmes. The authors would like to
 ## acknowledge the contributions of their colleagues of the SONATA
 ## partner consortium (www.sonata-nfv.eu).
-
+require_relative 'fpga'
+require_relative 'awsr'
 require_relative 'cs'
 require_relative 'vnf'
 require_relative 'nsr'

@@ -1,5 +1,5 @@
 ##
-## Copyright (c) 2015 SONATA-NFV
+## Copyright (c) 2015 SONATA-NFV [, ANY ADDITIONAL AFFILIATION]
 ## ALL RIGHTS RESERVED.
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 ##
-## Neither the name of the SONATA-NFV
+## Neither the name of the SONATA-NFV [, ANY ADDITIONAL AFFILIATION]
 ## nor the names of its contributors may be used to endorse or promote
 ## products derived from this software without specific prior written
 ## permission.
@@ -24,11 +24,29 @@
 ## the Horizon 2020 and 5G-PPP programmes. The authors would like to
 ## acknowledge the contributions of their colleagues of the SONATA
 ## partner consortium (www.sonata-nfv.eu).
-require_relative 'aws'
-require_relative 'fpga'
-require_relative 'cos'
-require_relative 'cs'
-require_relative 'vnf'
-require_relative 'ns'
-require_relative 'catalogue_helpers'
-require_relative 'sonata'
+# encoding: utf-8
+class FService
+
+  def initialize(catalogue, logger)
+    @catalogue = catalogue
+    @logger = logger
+  end
+
+  def find_service(name,vendor,version)
+    log_message = 'FService.'+__method__.to_s
+    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+    url = @catalogue.url+"?name=#{name}&vendor=#{vendor}&version=#{version}"
+    @logger.debug(log_message) {"url="+url}
+    begin
+      response = RestClient.get(url, headers)
+      body = response.body
+      @logger.debug(log_message) {"body=#{body}"}
+      fservice=JSON.parse(body, symbolize_names: true)
+      @logger.debug(log_message) {"fpga_service=#{fservice}"}
+      fservice[0]
+    rescue => e
+      @logger.error(log_message) {"No fpga service found for "+url}
+      e.message
+    end
+  end
+end

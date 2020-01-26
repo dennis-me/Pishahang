@@ -469,8 +469,10 @@ class ServiceLifecycleManager(ManoBasePlugin):
         if 'task' in self.services[serv_id]['service']['ssm'].keys():
             add_schedule.append('trigger_task_ssm')
 
-        add_schedule.append('request_topology')
 
+        
+        #add_schedule.append('request_topology')
+        add_schedule.append('request_aws_topology')
         # Perform the placement
         if 'placement' in self.services[serv_id]['service']['ssm'].keys():
             add_schedule.append('req_placement_from_ssm')
@@ -995,6 +997,49 @@ class ServiceLifecycleManager(ManoBasePlugin):
 
         LOG.info("Service " + serv_id + ": Topology requested from IA.")
 
+    def request_aws_topology(self, serv_id):
+        """
+        This method is used to request the topology of the available
+        infrastructure from the AWS Infrastructure Adaptor.
+
+        :param serv_id: The instance uuid of the service
+        """
+
+        # Generate correlation_id for the call, for future reference
+        corr_id = str(uuid.uuid4())
+        self.services[serv_id]['act_corr_id'] = corr_id
+
+        self.manoconn.call_async(self.resp_aws_topo,
+                                 t.IA_AWS_TOPO,
+                                 None,
+                                 correlation_id=corr_id)
+
+        # Pause the chain of tasks to wait for response
+        self.services[serv_id]['pause_chain'] = True
+
+        LOG.info("Service " + serv_id + ": Topology requested from IA.")
+
+    def resp_aws_topo(self, ch, method, prop, payload):
+        """
+        This function handles responses to topology requests made to the aws
+        infrastructure adaptor.
+        """
+        message = yaml.load(payload)
+
+        # Retrieve the service uuid
+        serv_id = tools.servid_from_corrid(self.services, prop.correlation_id)
+
+        LOG.info("Service " + serv_id + ": Topology received from AWS IA.")
+        LOG.debug("Requested info on topology: " + str(message))
+
+        # Add topology to ledger 
+        if 'topology' in self.services[serv_id]['infrastructure']:
+            self.services[serv_id]['infrastructure']['topology'].update(message)
+        else:
+            self.services[serv_id]['infrastructure']['topology'] = message
+
+        # Continue with the scheduled tasks
+        self.start_next_task(serv_id)
     def ia_prepare(self, serv_id):
         """
         This method informs the IA which PoPs will be used and which
@@ -1164,7 +1209,7 @@ class ServiceLifecycleManager(ManoBasePlugin):
 
         # Retrieve the service uuid
         serv_id = tools.servid_from_corrid(self.services, prop.correlation_id)
-        msg = ": Message received from CLM on FPGA service deploy call."
+        msg = ": Message received from FPGALM on FPGA service deploy call."
         LOG.info("Service " + serv_id + msg)
 
         # Inform GK if FPGA deployment failed
@@ -1186,7 +1231,7 @@ class ServiceLifecycleManager(ManoBasePlugin):
 
         # Only continue if all css are deployed
         if css_to_depl == 0:
-            LOG.info("Deployment of CSs completed.")
+            LOG.info("Deployment of FPGAs completed.")
             self.services[serv_id]['act_corr_id'] = None
             self.start_next_task(serv_id)
 
@@ -1691,7 +1736,10 @@ class ServiceLifecycleManager(ManoBasePlugin):
     def store_nsr(self, serv_id):
 
         # TODO: get request_status from response from IA on chain
+
+
         is_nsd = 'nsd' in self.services[serv_id]['service']
+        is_cosd = 'cosd' in self.services[serv_id]['service']
         request_status = 'normal operation'
 
         if request_status == 'normal operation':
@@ -1726,7 +1774,7 @@ class ServiceLifecycleManager(ManoBasePlugin):
                 if error is not None:
                     self.error_handling(serv_id, t.GK_CREATE, error)
                     return
-#TODO store fpgar
+
             LOG.info("Service " + serv_id + ": Update status of the CSR")
             for cloud_service in self.services[serv_id]['cloud_service']:
                 cloud_service['csr']['status'] = "normal operation"
@@ -1758,8 +1806,44 @@ class ServiceLifecycleManager(ManoBasePlugin):
                 if error is not None:
                     self.error_handling(serv_id, t.GK_CREATE, error)
                     return
+            LOG.info("Service " + serv_id + ": Update status of the FPGAR")
+            for fpga_service in self.services[serv_id]['fpga_service']:
+                fpga_service['fpgar']['status'] = "normal operation"
+                fpga_service['fpgar']['version'] = '1'
 
-        descriptor = self.services[serv_id]['service']['nsd'] if is_nsd else self.services[serv_id]['service']['cosd']
+                url = t.FPGAR_REPOSITORY_URL + 'fpga_service-instances/' + fpga_service['id']
+                LOG.info("Service " + serv_id + ": URL FPGAR update: " + url)
+
+                error = None
+                try:
+                    header = {'Content-Type': 'application/json'}
+                    fpgar_resp = requests.put(url,
+                                             data=json.dumps(fpga_service['fpgar']),
+                                             headers=header,
+                                             timeout=1.0)
+                    fpgar_resp_json = str(fpgar_resp.json())
+                    if (fpgar_resp.status_code == 200):
+                        msg = ": FPGAR update accepted for " + fpga_service['id']
+                        LOG.info("Service " + serv_id + msg)
+                    else:
+                        msg = ": FPGAR update not accepted: " + fpgar_resp_json
+                        LOG.info("Service " + serv_id + msg)
+                        error = {'http_code': fpgar_resp.status_code,
+                                 'message': fpgar_resp_json}
+                except:
+                    error = {'http_code': '0',
+                             'message': 'Timeout when contacting FPGAR repo'}
+
+                if error is not None:
+                    self.error_handling(serv_id, t.GK_CREATE, error)
+                    return
+        if is_nsd:
+            descriptor = self.services[serv_id]['service']['nsd']
+        elif is_cosd:
+            descriptor = self.services[serv_id]['service']['cosd']
+        else: 
+            descriptor = self.services[serv_id]['service']['awsd']
+
 
         vnfr_ids = []
         for function in self.services[serv_id]['function']:
@@ -1769,10 +1853,16 @@ class ServiceLifecycleManager(ManoBasePlugin):
         for cloud_service in self.services[serv_id]['cloud_service']:
             csr_ids.append(cloud_service['id'])
 
+        fpgar_ids = []
+        for fpga_service in self.services[serv_id]['fpga_service']:
+            fpgar_ids.append(function['id'])
+
         if is_nsd:
             record = tools.build_nsr(request_status, descriptor, vnfr_ids, serv_id)
-        else:
+        elif is_cosd:
             record = tools.build_cosr(request_status, descriptor, vnfr_ids, csr_ids, serv_id)
+        else: 
+            record = tools.build_awsr(request_status, descriptor, vnfr_ids, csr_ids, fpgar_ids, serv_id)
 
         LOG.debug("Record to be stored: " + yaml.dump(record))
 
@@ -1780,7 +1870,13 @@ class ServiceLifecycleManager(ManoBasePlugin):
 
         try:
             header = {'Content-Type': 'application/json'}
-            url = t.NSR_REPOSITORY_URL + 'ns-instances' if is_nsd else t.COSR_REPOSITORY_URL + 'cos-instances'
+            if is_nsd:
+                url = t.NSR_REPOSITORY_URL + 'ns-instances'
+            elif is_cosd:
+                url = t.NSR_REPOSITORY_URL + 'cos-instances'
+            else:
+                url = t.NSR_REPOSITORY_URL + 'aws-instances'
+
             record_resp = requests.post(url,
                                      data=json.dumps(record),
                                      headers=header,
@@ -1797,8 +1893,12 @@ class ServiceLifecycleManager(ManoBasePlugin):
         except:
             error = {'http_code': '0',
                      'message': 'Timeout when contacting record repo'}
-
-        self.services[serv_id]['service']['nsr' if is_nsd else 'cosr'] = record
+        if is_nsd:
+            self.services[serv_id]['service']['nsr'] = record
+        if is_cosd:
+            self.services[serv_id]['service']['cosr'] = record
+        else:
+            self.services[serv_id]['service']['awsr'] = record
 
         if error is not None:
             self.error_handling(serv_id, t.GK_CREATE, error)
@@ -2396,11 +2496,22 @@ class ServiceLifecycleManager(ManoBasePlugin):
         """
 
         is_nsd = 'nsd' in self.services[serv_id]['service']
+        is_cosd = 'cosd' in self.services[serv_id]['service']
 
         # Configure the Monitoring SSM, if present
         if 'monitor' in self.services[serv_id]['service']['ssm'].keys():
             LOG.info("Service " + serv_id + ": Sending descriptors to Mon SSM")
             message = {}
+            if is_nsd:
+                message['nsd'] = self.services[serv_id]['service']['nsd']           
+                message['nsr'] = self.services[serv_id]['service']['nsr']             
+            elif is_nsd:
+                message['cosd'] = self.services[serv_id]['service']['cosd']
+                message['cosr'] = self.services[serv_id]['service']['cosr']                        
+            else:
+                message['awsd'] = self.services[serv_id]['service']['awsd']
+                message['awsr'] = self.services[serv_id]['service']['awsr']            
+
             message['nsd' if is_nsd else 'cosd'] = self.services[serv_id]['service']['nsd' if is_nsd else 'cosd']
             message['nsr' if is_nsd else 'cosr'] = self.services[serv_id]['service']['nsr' if is_nsd else 'cosr']
             vnfs = []
@@ -2413,6 +2524,12 @@ class ServiceLifecycleManager(ManoBasePlugin):
                 css.append({'csd': cs['csd'],
                              'id': cs['id'],
                              'csr': cs['csr']})
+            fpgas = []
+            for fpga in self.services[serv_id]['fpga_service']:
+                fpgas.append({'fpgad': fpga['fpgad'],
+                             'id': fpga['id'],
+                             'fpgar': fpga['fpgar']})
+            message['fpgas'] = fpgas
             message['css'] = css
             message['vnfs'] = vnfs
             message['ssm_type'] = 'monitor'
@@ -2430,9 +2547,10 @@ class ServiceLifecycleManager(ManoBasePlugin):
         service = self.services[serv_id]['service']
         functions = self.services[serv_id]['function']
         cloud_services = self.services[serv_id]['cloud_service']
+        fpga_services = self.services[serv_id]['fpga_service']
         userdata = self.services[serv_id]['user_data']
 
-        mon_mess = tools.build_monitoring_message(service, functions, cloud_services, userdata)
+        mon_mess = tools.build_monitoring_message(service, functions, cloud_services, fpga_services, userdata)
 
         LOG.debug("Monitoring message created: " + yaml.dump(mon_mess))
 
@@ -2473,6 +2591,7 @@ class ServiceLifecycleManager(ManoBasePlugin):
         LOG.info("Service " + serv_id + ": Reporting result to GK")
 
         is_nsd = 'nsd' in self.services[serv_id]['service']
+        is_cosd = 'cosd' in self.services[serv_id]['service']
 
         message = {}
 
@@ -2481,16 +2600,23 @@ class ServiceLifecycleManager(ManoBasePlugin):
         message['timestamp'] = time.time()
         if is_nsd:
             message['nsr'] = self.services[serv_id]['service']['nsr']
-        else:
+        elif is_cosd:
             message['cosr'] = self.services[serv_id]['service']['cosr']
+        else: 
+            message['cosr'] = self.services[serv_id]['service']['cosr']
+
         message['vnfrs'] = []
+        message['fpgars'] = []
         message['csrs'] = []
 
         for function in self.services[serv_id]['function']:
             message['vnfrs'].append(function['vnfr'])
 
         for cloud_service in self.services[serv_id]['cloud_service']:
-            message['csrs'].append(cloud_service['csr'])
+            message['csrs'].append(cloud_service['csr'])        
+            
+        for fpga_service in self.services[serv_id]['fpga_service']:
+            message['fpgars'].append(cloud_service['fpgar'])
 
         LOG.debug("Payload of message " + str(message))
 

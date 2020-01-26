@@ -24,11 +24,12 @@
 ## the Horizon 2020 and 5G-PPP programmes. The authors would like to
 ## acknowledge the contributions of their colleagues of the SONATA
 ## partner consortium (www.sonata-nfv.eu).
-require_relative 'aws'
-require_relative 'fpga'
-require_relative 'cos'
-require_relative 'cs'
-require_relative 'vnf'
-require_relative 'ns'
-require_relative 'catalogue_helpers'
-require_relative 'sonata'
+
+class Fpsr
+  include Mongoid::Document
+  include Mongoid::Timestamps
+  include Mongoid::Pagination
+  include Mongoid::Attributes::Dynamic
+
+  store_in collection: 'fpgar'
+end

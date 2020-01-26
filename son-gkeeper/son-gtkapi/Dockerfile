@@ -23,4 +23,5 @@ ENV USER_MANAGEMENT_URL http://son-gtkusr:5600
 ENV VALIDATOR_URL http://son-validate:5050
 ENV RATE_LIMITER_URL http://son-gtkrlt:5150
 ENV CLOUD_SERVICE_MANAGEMENT_URL http://son-gtkcsrv:5250
+ENV FPGA_SERVICE_MANAGEMENT_URL http://son-gtkcsrv:5260
 CMD ["bundle", "exec", "puma", "-C", "config/puma.rb", "-b", "tcp://0.0.0.0:5000"]

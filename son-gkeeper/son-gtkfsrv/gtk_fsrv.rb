@@ -47,20 +47,15 @@ Bundler.require :default, ENV['RACK_ENV'].to_sym
 end
 
 # Main class supporting the Gatekeeper's Service Management micro-service
-class GtkSrv < Sinatra::Base
-
+class GtkFsrv < Sinatra::Base
   register Sinatra::ConfigFile
   register Sinatra::CrossOrigin
   register Sinatra::Reloader
   register Sinatra::ActiveRecordExtension
   register Sinatra::Logger
+  set :logger_level, :debug # or :fatal, :error, :warn, :info
   
-  helpers GtkSrvHelper
-  
-  MODULE='GtkSrv'
-  CREATE = 'service.instances.create'
-  UPDATE = 'service.instances.update'
-  TERMINATE = 'service.instance.terminate'
+  helpers GtkFsrvHelper
   
   set :root, File.dirname(__FILE__)
   set :public_folder, File.join(File.dirname(__FILE__), 'public')
@@ -73,44 +68,23 @@ class GtkSrv < Sinatra::Base
   use Rack::Session::Cookie, :key => 'rack.session', :domain => 'foo.com', :path => '/', :expire_after => 2592000, :secret => '$0nata'
   
   # Logging
+  MODULE='GtkFsrv'
 	enable :logging
-
   FileUtils.mkdir(File.join(settings.root, 'log')) unless File.exists? File.join(settings.root, 'log')
   logfile = File.open(File.join('log', ENV['RACK_ENV'])+'.log', 'a+')
   logfile.sync = true
   set :logger, Logger.new(logfile)
   raise 'Can not proceed without a logger file' if settings.logger.nil?
   set :logger_level, (settings.logger_level ||= 'debug').to_sym # can be debug, fatal, error, warn, or info
+  
   logger.info(MODULE) {"Started at #{settings.time_at_startup}"}
   logger.info(MODULE) {"Logger level at :#{settings.logger_level}"}
-    
   enable :cross_origin
-  
+
   if settings.catalogues
-    set :services_catalogue, Catalogue.new(settings.catalogues+'/network-services', logger)
-    set :complex_services_catalogue, Catalogue.new(settings.catalogues+'/complex-services', logger)
-    set :aws_services_catalogue, Catalogue.new(settings.catalogues+'/aws-services', logger)
-    set :functions_catalogue, Catalogue.new(settings.catalogues+'/vnfs', logger)
-    set :cloud_service_catalogue, Catalogue.new(settings.catalogues+'/csds', logger)
-    set :fpga_service_catalogue, Catalogue.new(settings.catalogues+'/fpgads', logger)
+    set :fpga_service_catalogue, FService.new(settings.catalogues+'/fpgads', logger)
   else
-    logger.error(MODULE) {'>>>Catalogue url not defined, application being terminated!!'}
+    puts '    >>>Catalogue url not defined, application being terminated!!'
     Process.kill('TERM', Process.pid)
   end
-  if settings.mqserver_url
-    set :create_mqserver, MQServer.new(CREATE, settings.mqserver_url)
-    #set :update_server, UpdateServer.new(settings.mqserver_url, logger)
-    set :update_mqserver, MQServer.new(UPDATE, settings.mqserver_url)
-    set :terminate_mqserver, MQServer.new(TERMINATE, settings.mqserver_url)
-  else
-    logger.error(MODULE) {'>>>MQServer url not defined, application being terminated!!'}
-    Process.kill('TERM', Process.pid)
-  end
-  logger.info(MODULE) {"started at #{settings.time_at_startup}"}
-  logger.info(MODULE) {"Services Catalogue: #{settings.services_catalogue.url}"}
-  logger.info(MODULE) {"Functions Catalogue: #{settings.functions_catalogue.url}"}
-  logger.info(MODULE) {"Create MQServer: #{settings.create_mqserver.url}"}
-  logger.info(MODULE) {"Update MQServer: #{settings.update_mqserver.url}"}
-  logger.info(MODULE) {"Terminate MQServer: #{settings.terminate_mqserver.url}"}
-  #logger.info(MODULE) {"UpdateServer: #{settings.update_mqserver.url}"}
 end

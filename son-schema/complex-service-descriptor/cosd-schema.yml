@@ -196,6 +196,36 @@ properties:
         - service_name
         - service_version
     uniqueItems: true
+  fpga_services:
+    description: "The aws services that a part of this network service."
+    type: "array"
+    items:
+      types: "object"
+      properties:
+        service_id:
+          description: "A unique identifier of this aws service within the scope if this NS descriptor."
+          type: "string"
+        service_vendor:
+          description: "The vendor id identifies the fpga descriptor uniquely across all fpga service descriptors."
+          type: "string"
+          pattern: "^[a-z0-9\\-_.]+$"  
+        service_name:
+          description: "The name of the aws service description."
+          type: "string"
+          pattern: "^[a-z0-9\\-_.]+$"
+        service_version:
+          description: "The version of the aws service descriptor."
+          type: "string"
+          pattern: "^(== |>= |<= |!= )?[0-9\\-_.]+$"
+        description:
+          description: "A longer description of the fpga service."
+          type: "string"
+      required:
+        - service_id
+        - service_vendor
+        - service_name
+        - service_version
+    uniqueItems: true
   connection_points:
     description: "The connection points of the overall NS, that connects the NS to the external world."
     type: "array"

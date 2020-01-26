@@ -7,6 +7,6 @@ version: "0.2"
 author: "Dennis Meier"
 fpga_services:
 - service_id: "hello-web"
-  service_vendor: "eu.sonata-nfv.cloud-service-descriptor"
+  service_vendor: "eu.sonata-nfv.fpga-service-descriptor"
   service_name: "hello-web"
   service_version: "0.2"

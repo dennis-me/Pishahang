@@ -166,29 +166,29 @@ properties:
     minItems: 0
     uniqueItems: true
     # How do I write down that there must be at least one of VNFDs or NSDs?
-  aws_services:
-    description: "The aws services that a part of this network service."
+  cloud_services:
+    description: "The cloud services that a part of this network service."
     type: "array"
     items:
       types: "object"
       properties:
         service_id:
-          description: "A unique identifier of this aws service within the scope if this NS descriptor."
+          description: "A unique identifier of this cloud service within the scope if this NS descriptor."
           type: "string"
         service_vendor:
-          description: "The vendor id identifies the AWS Service descriptor uniquely across all aws service descriptors."
+          description: "The vendor id identifies the CS descriptor uniquely across all cloud service descriptors."
           type: "string"
           pattern: "^[a-z0-9\\-_.]+$"
         service_name:
-          description: "The name of the aws service description."
+          description: "The name of the cloud service description."
           type: "string"
           pattern: "^[a-z0-9\\-_.]+$"
         service_version:
-          description: "The version of the aws service descriptor."
+          description: "The version of the cloud service descriptor."
           type: "string"
           pattern: "^(== |>= |<= |!= )?[0-9\\-_.]+$"
         description:
-          description: "A longer description of the aws server."
+          description: "A longer description of the cloud server."
           type: "string"
       required:
         - service_id

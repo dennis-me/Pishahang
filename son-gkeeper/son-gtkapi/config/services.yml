@@ -42,6 +42,12 @@ development: &common_settings
     cloud_services:
       model: CloudServiceManagerService
       env_var_url: CLOUD_SERVICE_MANAGEMENT_URL
+    aws_services:
+      model: AWSManagerService
+      env_var_url: SERVICE_MANAGEMENT_URL
+    fpga_services:
+      model: FPGAServiceManagerService
+      env_var_url: FPGA_SERVICE_MANAGEMENT_URL
     records:
       model: RecordManagerService
       env_var_url: RECORD_MANAGEMENT_URL

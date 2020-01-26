@@ -253,6 +253,90 @@ def build_cosr(request_status, cosd, vnfr_ids, csr_ids, service_instance_id):
     return cosr
 
 
+def build_awsr(request_status, awsd, vnfr_ids, csr_ids, fpgar_ids, service_instance_id):
+    """
+    This method builds the whole NSR from the payload (stripped nsr and vnfrs)
+    returned by the Infrastructure Adaptor (IA).
+    """
+
+    awsr = {}
+    # awsr mandatory fields
+    awsr['descriptor_version'] = 'awsr-schema-01'
+    awsr['id'] = service_instance_id
+    awsr['status'] = request_status
+    # Building the awsr makes it the first version of this awsr
+    awsr['version'] = '1'
+    awsr['descriptor_reference'] = awsd['uuid']
+
+    # network functions
+    awsr['network_functions'] = []
+    for vnfr_id in vnfr_ids:
+        function = {}
+        function['vnfr_id'] = vnfr_id
+        awsr['network_functions'].append(function)
+
+    # cloud services
+    awsr['cloud_services'] = []
+    for csr_id in csr_ids:
+        cloud_service = {}
+        cloud_service['csr_id'] = csr_id
+        awsr['cloud_services'].append(cloud_service)
+    #fpga services
+    awsr['fpga_services'] = []
+    for fpgar_id in fpgar_ids:
+        fpga_service = {}
+        fpga_service['fpgar_id'] = fpgar_id
+        awsr['fpga_services'].append(fpga_service)
+
+    # virtual links
+    if 'virtual_links' in awsd:
+        awsr['virtual_links'] = []
+        for virtual_link in awsd['virtual_links']:
+            vlink = {}
+            vlink['id'] = virtual_link['id']
+            vlink['connectivity_type'] = virtual_link['connectivity_type']
+            vlink['connection_points_reference'] = virtual_link['connection_points_reference']
+            awsr['virtual_links'].append(vlink)
+
+    # forwarding graphs
+    if 'forwarding_graphs' in awsd:
+        awsr['forwarding_graphs'] = []
+        for forwarding_graph in awsd['forwarding_graphs']:
+            awsr['forwarding_graphs'].append(forwarding_graph)
+
+    # lifecycle events
+    if 'lifecycle_events' in awsd:
+        awsr['lifecycle_events'] = []
+        for lifecycle_event in awsd['lifecycle_events']:
+            awsr['lifecycle_events'].append(lifecycle_event)
+
+    # vnf_dependency
+    if 'vnf_dependency' in awsd:
+        awsr['vnf_dependency'] = []
+        for vd in awsd['vnf_dependency']:
+            awsr['vnf_dependency'].append(vd)
+
+    # services_dependency
+    if 'services_dependency' in awsd:
+        awsr['services_dependency'] = []
+        for sd in awsd['services_dependency']:
+            awsr['services_dependency'].append(sd)
+
+    # monitoring_parameters
+    if 'monitoring_parameters' in awsd:
+        awsr['monitoring_parameters'] = []
+        for mp in awsd['monitoring_parameters']:
+            awsr['monitoring_parameters'].append(mp)
+
+    # auto_scale_policy
+    if 'auto_scale_policy' in awsd:
+        awsr['auto_scale_policy'] = []
+        for asp in awsd['auto_scale_policy']:
+            awsr['monitoring_parameters'].append(asp)
+
+    return awsr
+
+
 def get_platform_public_key(url):
     """
     This method gets the public key from the platform
@@ -553,15 +637,24 @@ def get_vnfd_by_reference(gk_request, vnfd_reference):
     return None
 
 
-def build_monitoring_message(service, functions, cloud_services, userdata):
+def build_monitoring_message(service, functions, cloud_services, fpga_services, userdata):
     """
     This method builds the message for the Monitoring Manager.
     """
 
     is_nsd = 'nsd' in service
+    is_cosd = 'cosd' in service
 
-    descriptor = service['nsd'] if is_nsd else service['cosd']
-    record = service['nsr'] if is_nsd else service['cosr']
+    if is_nsd:
+        descriptor = service['nsd']
+        record = service['nsr']
+    elif is_cosd:
+        descriptor = service['cosd']
+        record = service['cosr']
+    else:
+        descriptor = service['awsd']
+        record = service['awsr']
+
 
     def get_associated_rule(vnfd, monitoring_parameter_name):
         """
@@ -612,6 +705,7 @@ def build_monitoring_message(service, functions, cloud_services, userdata):
 
     message['service'] = service
     message['functions'] = []
+    message['fpga_services'] = []
     message['cloud_services'] = []
     message['rules'] = []
 
@@ -760,6 +854,64 @@ def build_monitoring_message(service, functions, cloud_services, userdata):
             notification_type_mapping['email'] = 3
 
             for mr in csd['monitoring_rules']:
+                rule = {}
+                # TODO Implement
+
+    for fpga in fpga_services:
+
+        fpgar = fpga['fpgar']
+        fpgad = fpga['fpgad']
+
+        # we should create one cloud service per virtual deployment unit
+        for vdu in csr['virtual_deployment_units']:
+            fpga_service = {}
+            fpga_service['fpga_service_record_uuid'] = fpgar['id']
+            fpga_service['fpgad_name'] = fpgad['name']
+            fpga_service['vdu_id'] = vdu['id']
+            fpga_service['description'] = fpgad['description']
+            fpga_service['pop_id'] = fpga['vim_uuid']
+            fpga_service['metrics'] = []
+
+            if 'monitoring_parameters' in vdu:
+
+                for mp in vdu['monitoring_parameters']:
+                    metric = {}
+                    metric['name'] = mp['name']
+                    metric['unit'] = mp['unit']
+
+                    associated_rule = get_associated_rule(csd, mp['name'])
+                    if (associated_rule is not None):
+                        if 'threshold' in mp.keys():
+                            metric['threshold'] = mp['threshold']
+                        else:
+                            metric['threshold'] = None
+                        if 'frequency' in mp.keys():
+                            metric['interval'] = mp['frequency']
+                        else:
+                            metric['interval'] = None
+                        if 'command' in mp.keys():
+                            metric['cmd'] = mp['command']
+                        else:
+                            metric['cmd'] = None
+                        if 'description' in mp.keys():
+                            metric['description'] = mp['description']
+                        else:
+                            metric['description'] = ""
+
+                        fpga_service['metrics'].append(metric)
+
+            message['fpga_services'].append(fpga_service)
+
+        if 'monitoring_rules' in fpgad.keys():
+
+            # variable used to map the received notification_type to the
+            # integers expected by the monitoring repo
+            notification_type_mapping = {}
+            notification_type_mapping['sms'] = 1
+            notification_type_mapping['rabbitmq_message'] = 2
+            notification_type_mapping['email'] = 3
+
+            for mr in fpgad['monitoring_rules']:
                 rule = {}
                 # TODO Implement
 

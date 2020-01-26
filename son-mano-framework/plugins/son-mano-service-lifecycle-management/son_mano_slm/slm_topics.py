@@ -68,7 +68,7 @@ IA_CONF_CHAIN = 'infrastructure.service.chain.configure'
 IA_DECONF_CHAIN = 'infrastructure.service.chain.deconfigure'
 IA_CONF_WAN = 'infrastructure.service.wan.configure'
 IA_DECONF_WAN = 'infrastructure.service.wan.deconfigure'
-
+IA_AWS_TOPO = 'infrastructure.service.aws.topology'
 # With specific manager registry
 SRM_ONBOARD = 'specific.manager.registry.ssm.on-board'
 SRM_INSTANT = 'specific.manager.registry.ssm.instantiate'
@@ -105,15 +105,21 @@ REG_PATH = '/micro-services'
 LOGIN_PATH = '/micro-services'
 SERVICES = '/services/'
 COMPLEX_SERVICES = '/complex-services/'
+AWS_SERVICES = '/aws-services/'
 FUNCTIONS = '/functions/'
 CLOUD_SERVICES = '/cloud-services/'
+FPGA_SERVICES = '/fpga-services/'
+
 
 GK_REGISTER = BASE_URL + API_VER + REG_PATH
 GK_LOGIN = BASE_URL + API_VER + LOGIN_PATH
 GK_SERVICES = BASE_URL + API_VER + SERVICES
 GK_COMPLEX_SERVICES = BASE_URL + API_VER + COMPLEX_SERVICES
+GK_AWS_SERVICES = BASE_URL + API_VER + AWS_SERVICES
 GK_FUNCTIONS = BASE_URL + API_VER + FUNCTIONS
 GK_CLOUD_SERVICES = BASE_URL + API_VER + CLOUD_SERVICES
+GK_FPGA_SERVICES = BASE_URL + API_VER + FPGA_SERVICES
+
 
 # REST API with GK
 GK_SERVICES_URL = BASE_URL + '/api/v2/services/'
@@ -129,8 +135,10 @@ CAT_BASE_URL = c.scheme + "://" + c.hostname + ":" + str(CAT_PORT)
 
 NSR_REPOSITORY_URL = CAT_BASE_URL + "/records/nsr/"
 COSR_REPOSITORY_URL = CAT_BASE_URL + "/records/cosr/"
+AWSR_REPOSITORY_URL = CAT_BASE_URL + "/records/awsr/"
 VNFR_REPOSITORY_URL = CAT_BASE_URL + "/records/vnfr/"
 CSR_REPOSITORY_URL = CAT_BASE_URL + "/records/csr/"
+FPGAR_REPOSITORY_URL = CAT_BASE_URL + "/records/fpgar/"
 
 # With Monitoring Manager
 # TODO: Secure this get against failure

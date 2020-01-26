@@ -100,6 +100,37 @@ class Cosd
   validates :cosd, presence: true
 end
 
+# Sonata class for Catalogue Services
+class Aws
+  include Mongoid::Document
+  include Mongoid::Timestamps
+  include Mongoid::Pagination
+  # include Mongoid::Versioning
+  include Mongoid::Attributes::Dynamic
+  store_in collection: 'awsd'
+
+  field :vendor, type: String
+  field :name, type: String
+  field :version, type: String
+  field :status, type: String
+  validates :vendor, :name, :version, presence: true
+end
+
+# New API v2 item structure for meta-data and descriptor data
+class Awsd
+  include Mongoid::Document
+  include Mongoid::Timestamps
+  include Mongoid::Pagination
+  include Mongoid::Attributes::Dynamic
+  store_in collection: 'awsd'
+
+  field :awsd, type: Hash
+  field :status, type: String
+  field :signature, type: String
+  field :username, type: String
+  validates :awsd, presence: true
+end
+
 # Sonata class for Catalogue Functions
 class Vnf
   include Mongoid::Document
@@ -158,6 +189,34 @@ class Clsd
   validates :csd, presence: true
 end
 
+# Sonata class for Catalogue Fpga Services
+class Fps
+  include Mongoid::Document
+  include Mongoid::Timestamps
+  include Mongoid::Pagination
+  include Mongoid::Attributes::Dynamic
+  store_in collection: 'fpgad'
+
+  field :vendor, type: String
+  field :name, type: String
+  field :version, type: String
+  validates :vendor, :name, :version, presence: true
+end
+
+# New API v2 item structure for meta-data and descriptor data
+class Fpsd
+  include Mongoid::Document
+  include Mongoid::Timestamps
+  include Mongoid::Pagination
+  include Mongoid::Attributes::Dynamic
+  store_in collection: 'fpgad'
+
+  field :csd, type: Hash
+  field :status, type: String
+  field :signature, type: String
+  field :username, type: String
+  validates :fpgad, presence: true
+end
 # Sonata class for Catalogue Packages
 class Package
   include Mongoid::Document

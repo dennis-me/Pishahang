@@ -311,6 +311,7 @@ class FPGAServiceLifecycleManager(ManoBasePlugin):
         self.start_next_task(fpga_service_id)
 
     def store_fpgar(self, fpga_service_id):
+        
         """
         This method stores the fpgar in the repository
         """
@@ -323,6 +324,7 @@ class FPGAServiceLifecycleManager(ManoBasePlugin):
         LOG.info(yaml.dump(fpgar))
 
         # Store the record
+        """
         url = t.FPGAR_REPOSITORY_URL + 'fpga-instances'
         header = {'Content-Type': 'application/json'}
         fpgar_response = requests.post(url,
@@ -331,6 +333,7 @@ class FPGAServiceLifecycleManager(ManoBasePlugin):
                                       timeout=1.0)
         LOG.info("Storing FPGAR on " + url)
         LOG.debug("FPGAR: " + str(fpgar))
+     
 
         if fpgar_response.status_code == 200:
             LOG.info("FPGAR storage accepted.")
@@ -340,7 +343,7 @@ class FPGAServiceLifecycleManager(ManoBasePlugin):
                      'message': fpgar_response.json()}
             self.fpga_services[fpga_service_id]['error'] = error
             LOG.info('FPGAR to repo failed: ' + str(error))
-
+        """
         return
 
     def inform_slm_on_deployment(self, fpga_service_id):

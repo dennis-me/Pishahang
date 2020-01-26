@@ -74,8 +74,9 @@ def build_fpgar(ia_fpgar, fpgad):
         if 'resource_requirements' in fpgad_vdu:
             vdu['resource_requirements'] = fpgad_vdu['resource_requirements']
 
-        vdu['service_image'] = fpgad_vdu['service_image']
-        vdu['service_type'] = fpgad_vdu['service_type']
+        vdu['ami'] = fpgad_vdu['ami']
+        vdu['region'] = fpgad_vdu['region']
+        vdu['instance_type'] = fpgad_vdu['instance_type']
 
         if 'service_name' in fpgad_vdu:
             vdu['service_name'] = fpgad_vdu['service_name']
