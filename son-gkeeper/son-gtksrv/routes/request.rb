@@ -224,6 +224,10 @@ class GtkSrv < Sinatra::Base
       logger.debug(log_message) { "Can't find NS with uuid = #{params['service_uuid']}. Checking for complex service."}
 
       return CoService.new(settings.complex_services_catalogue, logger).find_by_uuid(params['service_uuid'])
+    rescue CoServiceNotFoundError
+      logger.debug(log_message) { "Can't find NS and cos with uuid = #{params['service_uuid']}. Checking for aws service."}
+      return AwService.new(settings.aws_services_catalogue, logger).find_by_uuid(params['service_uuid'])
+
     end
   end
     

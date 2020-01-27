@@ -31,7 +31,7 @@ require 'json'
 
 # This Class is the Class of Sonata Aws Repository
 class SonataAwsRepository < Sinatra::Application
-  @@awsr_schema = JSON.parse(JSON.dump(YAML.load(open('https://raw.githubusercontent.com/tobiasdierich/son-schema/master/complex-service-record/cosr-schema.yml') { |f| f.read })))
+  @@awsr_schema = JSON.parse(JSON.dump(YAML.load(open('https://raw.githubusercontent.com/dennis-me/Pishahang/blob/fpga-service/son-schema/aws-service-descriptor/awsd-schema.yml') { |f| f.read })))
   # https and openssl libs (require 'net/https' require 'openssl') enable access to external https links behind a proxy
 
   DEFAULT_OFFSET = '0'

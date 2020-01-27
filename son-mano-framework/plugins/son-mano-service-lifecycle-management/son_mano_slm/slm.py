@@ -578,6 +578,8 @@ class ServiceLifecycleManager(ManoBasePlugin):
         add_schedule.append("vnf_unchain")
         add_schedule.append("vnfs_stop")
         add_schedule.append("terminate_service")
+        add_schedule.append("terminate_aws_service")
+
 
         if self.services[serv_id]['service']['ssm']:
             add_schedule.append("terminate_ssms")
@@ -2054,6 +2056,54 @@ class ServiceLifecycleManager(ManoBasePlugin):
         self.services[serv_id]['pause_chain'] = True
 
     def IA_termination_response(self, ch, method, prop, payload):
+        """
+        This method handles the response from the IA on the termination call.
+        """
+
+        # Get the serv_id of this service
+        serv_id = tools.servid_from_corrid(self.services,
+                                           prop.correlation_id)
+
+        message = yaml.load(payload)
+
+        if message['request_status'] == 'COMPLETED':
+            msg = ": Response from IA: Service termination succeeded."
+            LOG.info("Service " + serv_id + msg)
+        else:
+            error = message['message']
+            msg = ": IA response: Service termination failed: " + error
+            LOG.info("Service " + serv_id + msg)
+            self.error_handling(serv_id, t.GK_KILL, error)
+            return
+
+        self.start_next_task(serv_id)
+
+    def terminate_aws_service(self, serv_id):
+        """
+        This method requests the termination of a service to the IA
+        """
+        if len(self.services[serv_id]['fpga_service']) == 0:
+            msg = ": Service doesn't contain any fpga services. Skipping FPGA termination."
+            LOG.info("Service " + serv_id + msg)
+            return
+
+
+        LOG.info("Service " + serv_id + ": Requesting IA to terminate aws service")
+
+        corr_id = str(uuid.uuid4())
+        self.services[serv_id]['act_corr_id'] = corr_id
+
+        payload = json.dumps({'instance_uuid': serv_id})
+
+        self.manoconn.call_async(self.IA_fpga_termination_response,
+                                 t.IA_FPGA_REMOVE,
+                                 payload,
+                                 correlation_id=corr_id)
+
+        # Pause the chain of tasks to wait for response
+        self.services[serv_id]['pause_chain'] = True
+
+    def IA_fpga_termination_response(self, ch, method, prop, payload):
         """
         This method handles the response from the IA on the termination call.
         """

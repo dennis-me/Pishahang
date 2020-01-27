@@ -28,7 +28,7 @@
 # @see FPGARepository
 class SonataFpgaRepository < Sinatra::Application
 
-  @@fpgar_schema=JSON.parse(JSON.dump(YAML.load(open('https://raw.githubusercontent.com/tobiasdierich/son-schema/master/cloud-service-record/csr-schema.yml'){|f| f.read})))
+  @@fpgar_schema=JSON.parse(JSON.dump(YAML.load(open('https://raw.githubusercontent.com/dennis-me/Pishahang/blob/fpga-service/son-schema/fpga-service-record/fpgar-schema.yml'){|f| f.read})))
   # https and openssl libs (require 'net/https' require 'openssl') enable access to external https links behind a proxy
 
   before do

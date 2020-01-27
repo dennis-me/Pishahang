@@ -69,6 +69,8 @@ IA_DECONF_CHAIN = 'infrastructure.service.chain.deconfigure'
 IA_CONF_WAN = 'infrastructure.service.wan.configure'
 IA_DECONF_WAN = 'infrastructure.service.wan.deconfigure'
 IA_AWS_TOPO = 'infrastructure.service.aws.topology'
+IA_FPGA_REMOVE = 'infrastructure.service.fpga.terminate'
+
 # With specific manager registry
 SRM_ONBOARD = 'specific.manager.registry.ssm.on-board'
 SRM_INSTANT = 'specific.manager.registry.ssm.instantiate'

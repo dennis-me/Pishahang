@@ -140,8 +140,14 @@ properties:
         ids:
           description: "list of ids of instances"
           type: "string"
+        region:
+          description: "region of instance"
+          type: "string"
         instance_state:
-          description: "list of instance states of instances"
+          description: "list of instance states of instance"
+          type: "string"
+        instance_type:
+          description: "type of instances"
           type: "string"
         ipv6_addresses:
           description: "list of assigned IPv6 adresses of instances"

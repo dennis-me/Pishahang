@@ -63,6 +63,8 @@ def build_fpgar(ia_fpgar, fpgad):
     fpgar['version'] = '1'
     fpgar['status'] = ia_fpgar['status']
     fpgar['descriptor_reference'] = ia_fpgar['descriptor_reference']
+
+
     # virtual_deployment_units
     fpgar['virtual_deployment_units'] = []
     for ia_vdu in ia_fpgar['virtual_deployment_units']:
@@ -77,6 +79,27 @@ def build_fpgar(ia_fpgar, fpgad):
         vdu['ami'] = fpgad_vdu['ami']
         vdu['region'] = fpgad_vdu['region']
         vdu['instance_type'] = fpgad_vdu['instance_type']
+
+
+        vdu['ami'] = ia_vdu['ami']
+        vdu['arn'] = ia_vdu['arn']
+        vdu['availability_zone'] = ia_vdu['availability_zone']
+        vdu['credit_specification'] = ia_vdu['credit_specification']
+        vdu['ebs_block_device_volume_ids'] = ia_vdu['ebs_block_device_volume_ids']
+        vdu['ids'] = ia_vdu['ids']
+        vdu['instance_state'] = ia_vdu['instance_state']
+        vdu['ipv6_addresses'] = ia_vdu['ipv6_addresses']
+        vdu['key_name'] = ia_vdu['key_name']
+        vdu['password_data'] = ia_vdu['password_data']
+        vdu['placement_group'] = ia_vdu['placement_group']
+        vdu['primary_network_interface_id'] = ia_vdu['primary_network_interface_id']
+        vdu['private_ip'] = ia_vdu['private_ip']
+        vdu['public_ip'] = ia_vdu['public_ip']
+        vdu['root_block_device_volume_ids'] = ia_vdu['root_block_device_volume_ids']
+        vdu['security_groups'] = ia_vdu['security_groups']
+        vdu['subnet_id'] = ia_vdu['subnet_id']
+        vdu['volume_tags'] = ia_vdu['volume_tags']
+        vdu['vpc_security_group_ids'] = ia_vdu['vpc_security_group_ids']
 
         if 'service_name' in fpgad_vdu:
             vdu['service_name'] = fpgad_vdu['service_name']
