@@ -128,14 +128,6 @@ properties:
       additionalProperties: false
     minItems: 0
     uniqueItems: true
-  network_services:
-    description: "The recursive NSs (their descriptors), that are part of this network service."
-    type: "array"
-    items: 
-      type: "string"
-    minItems: 0
-    uniqueItems: true
-    # How do I write down that there must be at least one of VNFDs or NSDs?
   connection_points:
     description: "The connection points of the overall NS, that connects the NS to the external world."
     type: "array"

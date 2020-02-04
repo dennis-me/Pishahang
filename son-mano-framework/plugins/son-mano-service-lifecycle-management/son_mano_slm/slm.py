@@ -479,7 +479,7 @@ class ServiceLifecycleManager(ManoBasePlugin):
         else:
             add_schedule.append('SLM_mapping')
 
-        add_schedule.append('ia_prepare')
+        #add_schedule.append('ia_prepare')
         add_schedule.append('vnf_deploy')
         add_schedule.append('vnfs_start')
         add_schedule.append('cs_deploy')
@@ -487,9 +487,9 @@ class ServiceLifecycleManager(ManoBasePlugin):
 
         #add_schedule.append('vnf_chain')
         add_schedule.append('store_nsr')
-        add_schedule.append('wan_configure')
-        add_schedule.append('start_monitoring')
-        add_schedule.append('inform_gk_instantiation')
+        #add_schedule.append('wan_configure')
+        #add_schedule.append('start_monitoring')
+        #add_schedule.append('inform_gk_instantiation')
 
         self.services[serv_id]['schedule'].extend(add_schedule)
 
@@ -573,9 +573,9 @@ class ServiceLifecycleManager(ManoBasePlugin):
 
         if orig == 'GK':
             add_schedule.append('contact_gk')
-        add_schedule.append("stop_monitoring")
-        add_schedule.append("wan_deconfigure")
-        add_schedule.append("vnf_unchain")
+        #add_schedule.append("stop_monitoring")
+        #add_schedule.append("wan_deconfigure")
+        #add_schedule.append("vnf_unchain")
         add_schedule.append("vnfs_stop")
         add_schedule.append("terminate_service")
         add_schedule.append("terminate_aws_service")
@@ -1813,7 +1813,7 @@ class ServiceLifecycleManager(ManoBasePlugin):
                 fpga_service['fpgar']['status'] = "normal operation"
                 fpga_service['fpgar']['version'] = '1'
 
-                url = t.FPGAR_REPOSITORY_URL + 'fpga_service-instances/' + fpga_service['id']
+                url = t.FPGAR_REPOSITORY_URL + 'fpgars/' + fpga_service['id']
                 LOG.info("Service " + serv_id + ": URL FPGAR update: " + url)
 
                 error = None
@@ -1857,7 +1857,7 @@ class ServiceLifecycleManager(ManoBasePlugin):
 
         fpgar_ids = []
         for fpga_service in self.services[serv_id]['fpga_service']:
-            fpgar_ids.append(function['id'])
+            fpgar_ids.append(fpga_service['id'])
 
         if is_nsd:
             record = tools.build_nsr(request_status, descriptor, vnfr_ids, serv_id)
@@ -1875,9 +1875,9 @@ class ServiceLifecycleManager(ManoBasePlugin):
             if is_nsd:
                 url = t.NSR_REPOSITORY_URL + 'ns-instances'
             elif is_cosd:
-                url = t.NSR_REPOSITORY_URL + 'cos-instances'
+                url = t.COSR_REPOSITORY_URL + 'cos-instances'
             else:
-                url = t.NSR_REPOSITORY_URL + 'aws-instances'
+                url = t.AWSR_REPOSITORY_URL + 'awsrs'
 
             record_resp = requests.post(url,
                                      data=json.dumps(record),
@@ -2666,7 +2666,7 @@ class ServiceLifecycleManager(ManoBasePlugin):
             message['csrs'].append(cloud_service['csr'])        
             
         for fpga_service in self.services[serv_id]['fpga_service']:
-            message['fpgars'].append(cloud_service['fpgar'])
+            message['fpgars'].append(fpga_service['fpgar'])
 
         LOG.debug("Payload of message " + str(message))
 

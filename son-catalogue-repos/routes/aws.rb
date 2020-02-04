@@ -70,7 +70,7 @@ class SonataAwsRepository < Sinatra::Application
     requests = Awsr.paginate(page: params[:page], limit: params[:limit])
     logger.info "awsr: leaving GET /requests?#{uri.query} with #{requests.to_json}"
     halt 200, requests.to_json if requests
-    json_error 404, 'csr: No requests were found'
+    json_error 404, 'fpgar: No requests were found'
 
     begin
       # Get paginated list
@@ -153,7 +153,7 @@ class SonataAwsRepository < Sinatra::Application
       awsr = Awsr.find_by('_id' => params[:id])
       puts 'awsr is found'
     rescue Mongoid::Errors::DocumentNotFound => e
-      return 404, 'csr not found'
+      return 404, 'fpgar not found'
     end
 
     # Update to new version

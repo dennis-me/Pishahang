@@ -62,7 +62,8 @@ def build_fpgar(ia_fpgar, fpgad):
     # Building the fpgar makes it the first version of this fpgar.
     fpgar['version'] = '1'
     fpgar['status'] = ia_fpgar['status']
-    fpgar['descriptor_reference'] = ia_fpgar['descriptor_reference']
+    if 'descriptor_reference' in ia_fpgar:
+        fpgar['descriptor_reference'] = ia_fpgar['descriptor_reference']
 
 
     # virtual_deployment_units

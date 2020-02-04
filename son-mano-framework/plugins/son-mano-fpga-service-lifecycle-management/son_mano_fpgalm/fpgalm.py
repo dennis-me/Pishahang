@@ -322,10 +322,9 @@ class FPGAServiceLifecycleManager(ManoBasePlugin):
         fpgar = tools.build_fpgar(fpga_service['ia_fpgar'], fpga_service['fpgad'])
         self.fpga_services[fpga_service_id]['fpgar'] = fpgar
         LOG.info(yaml.dump(fpgar))
-
         # Store the record
-        """
-        url = t.FPGAR_REPOSITORY_URL + 'fpga-instances'
+
+        url = t.FPGAR_REPOSITORY_URL + 'fpgars'
         header = {'Content-Type': 'application/json'}
         fpgar_response = requests.post(url,
                                       data=json.dumps(fpgar),
@@ -343,7 +342,7 @@ class FPGAServiceLifecycleManager(ManoBasePlugin):
                      'message': fpgar_response.json()}
             self.fpga_services[fpga_service_id]['error'] = error
             LOG.info('FPGAR to repo failed: ' + str(error))
-        """
+
         return
 
     def inform_slm_on_deployment(self, fpga_service_id):

@@ -219,10 +219,10 @@ class PlacementPlugin(ManoBasePlugin):
             for vim in topology:
                 if vim['vim_type'] != "AWS":
                     continue
-                #TODO if budget is enough
-                mapping[fpga['id']] = {}
-                mapping[fpga['id']]['vim'] = vim['vim_uuid']
-                break
+                if vim['fpgas_left']> 0:
+                    mapping[fpga['id']] = {}
+                    mapping[fpga['id']]['vim'] = vim['vim_uuid']
+                    break
 
 
         # Check if all VNFs and CSs have been mapped

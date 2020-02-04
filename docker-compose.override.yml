@@ -35,6 +35,9 @@ services:
   son-gtkcsrv:
     build: ./son-gkeeper/son-gtkcsrv
 
+  son-gtkfsrv:
+    build: ./son-gkeeper/son-gtkfsrv
+
   # Gatekeeper Functions
   son-gtkfnct:
     build: ./son-gkeeper/son-gtkfnct

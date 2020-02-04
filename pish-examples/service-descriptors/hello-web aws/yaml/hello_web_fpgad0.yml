@@ -1,0 +1,13 @@
+---
+descriptor_version: "2.0"
+vendor: "eu.sonata-nfv.fpga-service-descriptor"
+name: "hello-web1"
+version: "0.2"
+author: "Dennis Meier"
+description: "Deploy a hello-world instance"
+virtual_deployment_units:
+- id: "hello-web-1"
+  name: "hello-web"
+  ami: "ami-0ef50ac7ce95adb40"
+  region: "eu-central-1"
+  instance_type: "t2.micro"

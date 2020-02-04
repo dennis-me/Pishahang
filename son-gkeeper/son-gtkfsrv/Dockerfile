@@ -1,4 +1,4 @@
-FROM ruby:2.2.3-slim
+FROM ruby:2.4.3-slim-stretch
 RUN apt-get update && \
   apt-get install -y --no-install-recommends build-essential libcurl3 libcurl3-gnutls libcurl4-openssl-dev && \
 	rm -rf /var/lib/apt/lists/*
@@ -11,4 +11,4 @@ EXPOSE 5260
 WORKDIR /app
 ENV CATALOGUES_URL http://son-catalogue-repos:4011/catalogues/api/v2
 ENV PORT 5260
-CMD ["foreman", "start"]
+CMD ["bundle", "exec", "puma", "-C", "config/puma.rb", "-b", "tcp://0.0.0.0:5500"]

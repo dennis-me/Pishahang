@@ -61,8 +61,8 @@ CAT_PORT = c.port
 CAT_BASE_URL = c.scheme + "://" + c.hostname + ":" + str(CAT_PORT)
 
 NSR_REPOSITORY_URL = CAT_BASE_URL + "/records/nsr/"
-FPGAR_REPOSITORY_URL = CAT_BASE_URL + "/records/fpgar/"
-
+#FPGAR_REPOSITORY_URL = CAT_BASE_URL + "/records/fpgar/"
+FPGAR_REPOSITORY_URL = "http://0.0.0.0:8008/"
 # With Monitoring Manager
 # TODO: Secure this get against failure
 MONITORING_URL = os.environ.get("url_monitoring_server")

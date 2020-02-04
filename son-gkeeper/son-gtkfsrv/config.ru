@@ -26,6 +26,6 @@
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
 root = ::File.dirname(__FILE__)
-require ::File.join(root, 'gtk_fsrv')
+require ::File.join(root, 'gtk_fnct')
 
 run GtkFsrv

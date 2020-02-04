@@ -1,10 +1,10 @@
-# [SONATA](http://www.sonata-nfv.eu)'s Gatekeeper Cloud Service Management micro-service
+# [SONATA](http://www.sonata-nfv.eu)'s Gatekeeper Function Management micro-service
 [![Build Status](http://jenkins.sonata-nfv.eu/buildStatus/icon?job=son-gkeeper)](http://jenkins.sonata-nfv.eu/job/son-gkeeper)
 
-This is the folder of the **Cloud Service Management** micro-service. This micro-service is used by the [`Gatekeeper API`](https://github.com/sonata-nfv/son-gkeeper/son-gtkapi).
+This is the folder of the **Functions Management** micro-service. This micro-service is used by the [`Gatekeeper API`](https://github.com/sonata-nfv/son-gkeeper/son-gtkapi).
 
 ## Configuration
-The configuration of the Gatekeeper's Cloud Service Management micro-service is done mostly by defining `ENV` variables in the [`Dockerfile`](https://github.com/sonata-nfv/son-gkeeper/blob/master/son-gtkfnct/Dockerfile). These variables are:
+The configuration of the Gatekeeper's Function Management micro-service is done mostly by defining `ENV` variables in the [`Dockerfile`](https://github.com/sonata-nfv/son-gkeeper/blob/master/son-gtkfnct/Dockerfile). These variables are:
 
 * `PORT`: the port the micro-service is to provide it's services, currently `5500`;
 * `CATALOGUES_URL`: the Catalogues URL, currently `http://catalogues:4002/catalogues`;
@@ -22,11 +22,11 @@ $ foreman start
 ### Implemented API
 The implemented API of the Gatekeeper is the following:
 
-* `/cloud-services`:
-    * `GET`: provides a list of cloud service records, available in the Repository;
-    * `/:uuid`: provides the cloud service record data with the given `:uuid`;
-    * `/cloud-services?status=active`: provides the cloud services with the status active;
-    * `/cloud-service?fields=uuid,vendor,name,version`: provides the cloud service data with the given `uuid`, `vendor`, `name` and `version`;
+* `/functions`:
+    * `GET`: provides a list of functions records, available in the Repository;
+    * `/:uuid`: provides the function record data with the given `:uuid`;
+    * `/functions?status=active`: provides the function with the status active;
+    * `/functions?fields=uuid,vendor,name,version`: provides the function data with the given `uuid`, `vendor`, `name` and `version`;
  * `/admin/logs`:
  	*  `GET`: Retrieve the currently available log file    
 

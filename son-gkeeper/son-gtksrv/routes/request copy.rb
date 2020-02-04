@@ -95,9 +95,24 @@ class GtkSrv < Sinatra::Base
       json_error 400, 'Not possible to create '+params['request_type']+' request', log_msg unless si_request
       logger.debug(log_msg) {"with service_uuid=#{params['service_uuid']}, service_instance_uuid=#{params['service_instance_uuid']}: #{si_request.inspect}"}
       
-      descriptor = service.key?('nsd') ? service['nsd'] : service['cosd']
+      if service.key?('nsd')
+        descriptor = service['nsd']
+      elsif service.key?('cosd')
+        descriptor = service['cosd']
+      else
+        descriptor = service['awsd']
+      end
+      
       descriptor[:uuid] = service['uuid']
-      start_request[service.key?('nsd') ? 'NSD' : 'COSD']=descriptor
+
+      if service.key?('nsd')
+        start_request['NSD'] = descriptor
+      elsif service.key?('cosd')
+        start_request['COSD'] = descriptor
+      else
+        start_request['AWSD'] = descriptor
+      end
+
 
       if descriptor.key?('network_functions')
         # map network functions to vnf descriptors
@@ -126,6 +141,20 @@ class GtkSrv < Sinatra::Base
           logger.debug(log_msg) {"start_request[\"CSD#{index}\"]=#{csd}"}
         end
       end
+
+      if descriptor.key?('fpga_services')
+        # map fpga services to fpga descriptors
+        descriptor['fpga_services'].each_with_index do |fservice, index|
+          logger.debug(log_msg) { "fpga_service=['#{fservice['service_name']}', '#{fservice['service_vendor']}', '#{fservice['service_version']}']"}
+          stored_service = FService.new(settings.fpga_service_catalogue, logger).find_service(fservice['service_name'],fservice['service_vendor'],fservice['service_version'])
+          logger.error(log_msg) {"fpga service not found"} unless stored_service
+          logger.debug(log_msg) {"fpga_service#{index}=#{stored_service}"}
+          fpgad = stored_service[:fpgad]
+          fpgad[:uuid] = stored_service[:uuid]
+          start_request["FPGAD#{index}"]=fpgad
+          logger.debug(log_msg) {"start_request[\"FPGAD#{index}\"]=#{fpgad}"}
+        end
+      end      
 
       start_request['egresses'] = egresses
       start_request['ingresses'] = ingresses
@@ -195,6 +224,10 @@ class GtkSrv < Sinatra::Base
       logger.debug(log_message) { "Can't find NS with uuid = #{params['service_uuid']}. Checking for complex service."}
 
       return CoService.new(settings.complex_services_catalogue, logger).find_by_uuid(params['service_uuid'])
+    rescue CoServiceNotFoundError
+      logger.debug(log_message) { "Can't find NS and cos with uuid = #{params['service_uuid']}. Checking for aws service."}
+      return AwService.new(settings.aws_services_catalogue, logger).find_by_uuid(params['service_uuid'])
+
     end
   end
     

@@ -158,14 +158,6 @@ properties:
       additionalProperties: false
     minItems: 1
     uniqueItems: true
-  network_services:
-    description: "The recursive NSs (their descriptors), that are part of this network service."
-    type: "array"
-    items: 
-      type: "string"
-    minItems: 0
-    uniqueItems: true
-    # How do I write down that there must be at least one of VNFDs or NSDs?
   cloud_services:
     description: "The cloud services that a part of this network service."
     type: "array"
@@ -189,6 +181,36 @@ properties:
           pattern: "^(== |>= |<= |!= )?[0-9\\-_.]+$"
         description:
           description: "A longer description of the cloud server."
+          type: "string"
+      required:
+        - service_id
+        - service_vendor
+        - service_name
+        - service_version
+    uniqueItems: true
+  fpga_services:
+    description: "The fpga services that a part of this network service."
+    type: "array"
+    items:
+      types: "object"
+      properties:
+        service_id:
+          description: "A unique identifier of this fpga service within the scope if this NS descriptor."
+          type: "string"
+        service_vendor:
+          description: "The vendor id identifies the FS descriptor uniquely across all cloud service descriptors."
+          type: "string"
+          pattern: "^[a-z0-9\\-_.]+$"
+        service_name:
+          description: "The name of the fpga service description."
+          type: "string"
+          pattern: "^[a-z0-9\\-_.]+$"
+        service_version:
+          description: "The version of the fpga service descriptor."
+          type: "string"
+          pattern: "^(== |>= |<= |!= )?[0-9\\-_.]+$"
+        description:
+          description: "A longer description of the fpga server."
           type: "string"
       required:
         - service_id

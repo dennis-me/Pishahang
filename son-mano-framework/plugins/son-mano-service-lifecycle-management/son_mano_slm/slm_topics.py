@@ -137,10 +137,10 @@ CAT_BASE_URL = c.scheme + "://" + c.hostname + ":" + str(CAT_PORT)
 
 NSR_REPOSITORY_URL = CAT_BASE_URL + "/records/nsr/"
 COSR_REPOSITORY_URL = CAT_BASE_URL + "/records/cosr/"
-AWSR_REPOSITORY_URL = CAT_BASE_URL + "/records/awsr/"
+AWSR_REPOSITORY_URL = "http://0.0.0.0:8008/"
 VNFR_REPOSITORY_URL = CAT_BASE_URL + "/records/vnfr/"
 CSR_REPOSITORY_URL = CAT_BASE_URL + "/records/csr/"
-FPGAR_REPOSITORY_URL = CAT_BASE_URL + "/records/fpgar/"
+FPGAR_REPOSITORY_URL = "http://0.0.0.0:8008/"
 
 # With Monitoring Manager
 # TODO: Secure this get against failure

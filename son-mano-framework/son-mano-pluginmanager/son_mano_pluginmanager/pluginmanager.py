@@ -39,7 +39,7 @@ import time
 from mongoengine import DoesNotExist
 
 from sonmanobase.plugin import ManoBasePlugin
-from son_mano_pluginmanager import model
+import model
 from son_mano_pluginmanager import interface
 
 logging.basicConfig(level=logging.INFO)
