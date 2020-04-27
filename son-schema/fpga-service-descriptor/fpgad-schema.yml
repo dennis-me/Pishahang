@@ -162,7 +162,7 @@ properties:
         ami:
           description: "The reference to a amazon machine image for the fpga service."
           type: "string"
-        service_name:
+        name:
           description: "The name for the network service. Useful for DNS, etc."
           type: "string"
         service_type:
